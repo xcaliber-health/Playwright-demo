@@ -1,8 +1,10 @@
 import { useState } from "react";
+import CodeEditor from "./codeEditor";
 
 function WebRecorder() {
   const [url, setUrl] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [recordedFile, setRecordedFile] = useState(null);
   const vncUrl = "http://localhost:8080/vnc.html?autoconnect=true&resize=scale";
 
   const startRecording = async () => {
@@ -22,6 +24,7 @@ function WebRecorder() {
       const data = await response.json();
       alert(data.message);
       setIsRecording(true);
+      setRecordedFile(null);
     } catch (error) {
       console.error("Error starting recording:", error);
     }
@@ -35,6 +38,10 @@ function WebRecorder() {
       const data = await response.json();
       alert(data.message);
       setIsRecording(false);
+
+      if (data.file) {
+        setRecordedFile(data.file);
+      }
     } catch (error) {
       console.error("Error stopping recording:", error);
     }
@@ -91,21 +98,35 @@ function WebRecorder() {
         </button>
       </div>
 
-      {isRecording && (
+      {isRecording ? (
         <>
           <h3>VNC Browser View</h3>
-          <iframe
-            src={vncUrl}
-            width="100%"
-            height="500px"
+          <div
             style={{
-              border: "1px solid #ccc",
-              borderRadius: "5px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
-            title="VNC Viewer"
-          ></iframe>
+          >
+            <iframe
+              src={vncUrl}
+              width="1366px"
+              height="768px"
+              style={{
+                display: "block",
+                overflow: "hidden",
+                transform: "scale(1)",
+                transformOrigin: "center",
+              }}
+              title="VNC Viewer"
+            ></iframe>
+          </div>
         </>
-      )}
+      ) : recordedFile ? (
+        <CodeEditor
+          uuid={recordedFile.split("/").pop().replace(".spec.ts", "")}
+        />
+      ) : null}
     </div>
   );
 }
