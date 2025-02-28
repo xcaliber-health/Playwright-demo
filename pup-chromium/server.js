@@ -28,12 +28,16 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   } else {
     console.log("Xvfb started on :99");
 
-    exec("x11vnc -display :99 -forever -nopw -bg -rfbport 5900", (error) => {
+    // :two: Start x11vnc after Xvfb is confirmed to be running
+    exec("x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900", 
+      (error) => {
       if (error) console.error("Error starting x11vnc:", error);
       else console.log("x11vnc running on port 5900");
     });
 
-    exec(`novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} &`, (error) => {
+    // :three: Start noVNC after x11vnc is confirmed
+    
+    exec(`novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`, (error) => {
       if (error) console.error("Error starting noVNC:", error);
       else
         console.log(`noVNC available at http://localhost:${VNC_PORT}/vnc.html`);
@@ -130,8 +134,7 @@ async function startBrowser() {
   try {
     const browser = await chromium.launch({
       headless: false,
-      executablePath:
-        "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
+      executablePath: "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -139,17 +142,28 @@ async function startBrowser() {
         "--disable-dev-shm-usage",
         "--remote-debugging-port=9222",
         "--display=:99",
+        "--start-fullscreen",  // <-- Forces Fullscreen Mode
+        "--window-position=0,0", // Ensures it starts at the top-left
       ],
     });
 
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+      viewport: { width: 1920, height: 1080 } // Ensures full-screen Playwright window
+    });
+
     const page = await context.newPage();
+
+    await page.evaluate(() => {
+      window.moveTo(0, 0);
+      window.resizeTo(screen.width, screen.height);
+    });
 
     console.log("Chromium launched!");
   } catch (error) {
     console.error("Error launching Chromium:", error);
   }
 }
+
 
 app.get("/", (req, res) => {
   res.send(
