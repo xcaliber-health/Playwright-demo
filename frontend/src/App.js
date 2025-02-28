@@ -5,7 +5,7 @@ function WebRecorder() {
   const [url, setUrl] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFile, setRecordedFile] = useState(null);
-  const vncUrl = "http://localhost:8080/vnc.html?autoconnect=true&resize=scale";
+  const vncUrl = "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
 
   const startRecording = async () => {
     if (!url.trim()) {
@@ -110,16 +110,18 @@ function WebRecorder() {
           >
             <iframe
               src={vncUrl}
-              width="1366px"
-              height="768px"
+              width="100%"
+              height="900px"
               style={{
                 display: "block",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
                 overflow: "hidden",
-                transform: "scale(1)",
-                transformOrigin: "center",
+                objectFit: "cover", // Ensures content fills iframe properly
+                transformOrigin: "top left",
               }}
               title="VNC Viewer"
-            ></iframe>
+            />
           </div>
         </>
       ) : recordedFile ? (
