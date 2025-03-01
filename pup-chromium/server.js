@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const { refactorScript } = require("./utils");
 
 const app = express();
 const PORT = 3000;
@@ -13,7 +14,7 @@ app.use(
   cors({
     origin: "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type"]
   })
 );
 
@@ -22,26 +23,33 @@ app.use(express.json());
 let playwrightProcess = null;
 let scriptPath = "";
 
-exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
+exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
     console.log("Xvfb started on :99");
 
     // :two: Start x11vnc after Xvfb is confirmed to be running
-    exec("x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900", 
-      (error) => {
-      if (error) console.error("Error starting x11vnc:", error);
-      else console.log("x11vnc running on port 5900");
-    });
+    exec(
+      "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
+      error => {
+        if (error) console.error("Error starting x11vnc:", error);
+        else console.log("x11vnc running on port 5900");
+      }
+    );
 
     // :three: Start noVNC after x11vnc is confirmed
-    
-    exec(`novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`, (error) => {
-      if (error) console.error("Error starting noVNC:", error);
-      else
-        console.log(`noVNC available at http://localhost:${VNC_PORT}/vnc.html`);
-    });
+
+    exec(
+      `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
+      error => {
+        if (error) console.error("Error starting noVNC:", error);
+        else
+          console.log(
+            `noVNC available at http://localhost:${VNC_PORT}/vnc.html`
+          );
+      }
+    );
 
     startBrowser();
   }
@@ -70,26 +78,42 @@ app.post("/start", (req, res) => {
     {
       env: { ...process.env, DISPLAY: ":99" },
       detached: true,
-      stdio: "ignore",
+      stdio: "ignore"
     }
   );
 
-  res.json({ message: "Playwright recording started!", file: scriptPath });
+  res.json({ message: "Playwright recording started!", file: scriptPath, uuid: fileId });
 });
 
 app.post("/stop", (req, res) => {
+  const { uuid } = req.body;
   if (!playwrightProcess) {
     return res.status(400).json({ message: "No recording in progress!" });
   }
 
-  exec("pkill -f 'playwright codegen'", () => {
+  exec("pkill -f 'playwright codegen'", async () => {
     playwrightProcess = null;
 
     if (fs.existsSync(scriptPath)) {
       console.log("Recording saved to:", scriptPath);
+      const script = fs.readFileSync(scriptPath, "utf8");
+      try {
+        const refactoredScript = await refactorScript(script);
+
+        const response = JSON.parse(refactoredScript);
+        console.log("refactoredScript", response.script);
+        fs.writeFileSync(scriptPath, response.script, "utf8");
+
+        createNewFile(uuid, "json", JSON.stringify(response.parameters));
+        console.log("Parameters saved to:", `/app/${uuid}.json`);
+
+      } catch (error) {
+        console.error("Error refactoring script:", error);
+        res.status(500).json({ message: "Error refactoring script!" });
+      }
       res.json({
         message: "Recording stopped and saved!",
-        file: scriptPath,
+        file: scriptPath
       });
     } else {
       res.status(500).json({ message: "Failed to save recording!" });
@@ -99,7 +123,8 @@ app.post("/stop", (req, res) => {
 
 app.get("/file/:uuid", (req, res) => {
   const { uuid } = req.params;
-  const filePath = `/app/${uuid}.spec.ts`;
+  const scriptPath = `/app/${uuid}.spec.ts`;
+  const parametersPath = `/app/${uuid}.json`;
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);
@@ -134,7 +159,8 @@ async function startBrowser() {
   try {
     const browser = await chromium.launch({
       headless: false,
-      executablePath: "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
+      executablePath:
+        "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -142,9 +168,9 @@ async function startBrowser() {
         "--disable-dev-shm-usage",
         "--remote-debugging-port=9222",
         "--display=:99",
-        "--start-fullscreen",  // <-- Forces Fullscreen Mode
-        "--window-position=0,0", // Ensures it starts at the top-left
-      ],
+        "--start-fullscreen", // <-- Forces Fullscreen Mode
+        "--window-position=0,0" // Ensures it starts at the top-left
+      ]
     });
 
     const context = await browser.newContext({
@@ -164,6 +190,31 @@ async function startBrowser() {
   }
 }
 
+app.post("/refactor", async (req, res) => {
+  const { script } = req.body;
+  console.log("script", script);
+
+  if (!script) {
+    return res.status(400).json({ message: "No script provided!" });
+  }
+
+  try {
+    const refactoredScript = await refactorScript(script);
+    console.log("refactoredScript", refactoredScript);
+
+    const response = JSON.parse(refactoredScript);
+    res.json(response);
+  } catch (error) {
+    console.error("Error refactoring script:", error);
+    res.status(500).json({ message: "Error refactoring script!" });
+  }
+});
+
+function createNewFile(uuid, fileType, content) {
+  const filePath = `/app/${uuid}.${fileType}`;
+  fs.writeFileSync(filePath, content, "utf8");
+  return filePath;
+}
 
 app.get("/", (req, res) => {
   res.send(

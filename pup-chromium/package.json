@@ -10,10 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.22.0",
     "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "playwright": "^1.50.1",
+    "pup-chromium": "file:",
     "puppeteer": "^24.3.0",
     "uuid": "^11.1.0"
   }

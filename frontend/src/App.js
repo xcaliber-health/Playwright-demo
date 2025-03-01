@@ -1,11 +1,13 @@
 import { useState } from "react";
 import CodeEditor from "./codeEditor";
 
+const backendUrl = "http://localhost:7000";
 function WebRecorder() {
   const [url, setUrl] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFile, setRecordedFile] = useState(null);
-  const vncUrl = "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
+  const [recordingUuid, setRecordingUuid] = useState(null);
+  const vncUrl = "http://localhost:9000/vnc.html?autoconnect=true&resize=remote";
 
   const startRecording = async () => {
     if (!url.trim()) {
@@ -14,7 +16,7 @@ function WebRecorder() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/start", {
+      const response = await fetch(`${backendUrl}/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,6 +27,7 @@ function WebRecorder() {
       alert(data.message);
       setIsRecording(true);
       setRecordedFile(null);
+      setRecordingUuid(data.uuid);
     } catch (error) {
       console.error("Error starting recording:", error);
     }
@@ -32,8 +35,12 @@ function WebRecorder() {
 
   const stopRecording = async () => {
     try {
-      const response = await fetch("http://localhost:3000/stop", {
+      const response = await fetch(`${backendUrl}/stop`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uuid: recordingUuid }),
       });
       const data = await response.json();
       alert(data.message);
