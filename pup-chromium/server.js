@@ -22,54 +22,95 @@ app.use(express.json());
 
 let playwrightProcess = null;
 let scriptPath = "";
+let browserInstance = null;
 
 function startServices(callback) {
-  exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
-    if (error) {
-      console.error("Error starting Xvfb:", error);
-      return callback(error);
+  exec("pgrep Xvfb", (error, stdout) => {
+    if (stdout) {
+      console.log("Xvfb is already running.");
     } else {
-      console.log("Xvfb started on :99");
-
-      startX11vnc(callback);
-    }
-  });
-}
-
-function startX11vnc(callback, retries = 3) {
-  exec(
-    "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
-    (error) => {
-      if (error) {
-        console.error("Error starting x11vnc:", error);
-
-        if (retries > 0) {
-          console.log(`Retrying x11vnc (${retries} attempts left)...`);
-          setTimeout(() => startX11vnc(callback, retries - 1), 2000);
-        } else {
+      exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
+        if (error) {
+          console.error("Error starting Xvfb:", error);
           return callback(error);
         }
-      } else {
-        console.log("x11vnc running on port 5900");
+        console.log("Xvfb started on :99");
+      });
+    }
 
+    exec("pgrep x11vnc", (error, stdout) => {
+      if (stdout) {
+        console.log("x11vnc is already running.");
+      } else {
         exec(
-          `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
+          "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
           (error) => {
             if (error) {
-              console.error("Error starting noVNC:", error);
+              console.error("Error starting x11vnc:", error);
               return callback(error);
-            } else {
+            }
+            console.log("x11vnc running on port 5900");
+          }
+        );
+      }
+
+      exec("pgrep novnc_proxy", (error, stdout) => {
+        if (stdout) {
+          console.log("noVNC is already running.");
+          callback(null);
+        } else {
+          exec(
+            `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
+            (error) => {
+              if (error) {
+                console.error("Error starting noVNC:", error);
+                return callback(error);
+              }
               console.log(
                 `noVNC available at http://localhost:${VNC_PORT}/vnc.html`
               );
               callback(null);
             }
-          }
-        );
-      }
-    }
-  );
+          );
+        }
+      });
+    });
+  });
 }
+// function startX11vnc(callback, retries = 3) {
+//   exec(
+//     "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
+//     (error) => {
+//       if (error) {
+//         console.error("Error starting x11vnc:", error);
+
+//         if (retries > 0) {
+//           console.log(`Retrying x11vnc (${retries} attempts left)...`);
+//           setTimeout(() => startX11vnc(callback, retries - 1), 2000);
+//         } else {
+//           return callback(error);
+//         }
+//       } else {
+//         console.log("x11vnc running on port 5900");
+
+//         exec(
+//           `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
+//           (error) => {
+//             if (error) {
+//               console.error("Error starting noVNC:", error);
+//               return callback(error);
+//             } else {
+//               console.log(
+//                 `noVNC available at http://localhost:${VNC_PORT}/vnc.html`
+//               );
+//               callback(null);
+//             }
+//           }
+//         );
+//       }
+//     }
+//   );
+// }
 
 function stopServices(callback) {
   exec("killall Xvfb x11vnc novnc_proxy", (error) => {
@@ -77,8 +118,17 @@ function stopServices(callback) {
       console.error("Error stopping services:", error);
       return callback(error);
     } else {
-      console.log("Services stopped successfully.");
-      callback(null);
+      if (browserInstance) {
+        browserInstance.close().then(() => {
+          browserInstance = null;
+          callback(null);
+        }).catch((err) => {
+          console.error("Error closing browser instance:", err);
+          callback(err);
+        });
+      } else {
+        callback(null);
+      }
     }
   });
 }
@@ -214,18 +264,28 @@ app.post("/replay", async (req, res) => {
         return res.status(500).json({ message: "Error starting services!" });
       }
 
-      const page = await createNewBrowser();
+      const page = await startBrowser();
 
       // Convert parameters map to an array of arguments
       const args = Object.values(parameters);
 
-      // Run the test with the provided arguments
-      await runTest(page,args);
+      console.log("args", args);
 
-      res.json({
-        message: "Replay completed successfully!",
-        status: "success",
-      });
+      console.log("Running test with parameters:", args);
+      try {
+        await runTest(page, args);
+        console.log("Test completed successfully!");
+        res.json({
+          message: "Replay completed successfully!",
+          status: "success",
+        });
+      } catch (testError) {
+        console.error("Error during test execution:", testError);
+        res.status(500).json({
+          message: "Error during test execution!",
+          error: testError.message,
+        });
+      }
     });
   } catch (error) {
     console.error("Error during replay:", error);
@@ -236,11 +296,11 @@ app.post("/replay", async (req, res) => {
   }
 
   // Stop services after running the test
-  stopServices((error) => {
-    if (error) {
-      console.error("Error stopping services:", error);
-    }
-  });
+  // stopServices((error) => {
+  //   if (error) {
+  //     console.error("Error stopping services:", error);
+  //   }
+  // });
 });
 
 app.get("/file/:uuid", (req, res) => {
@@ -299,10 +359,27 @@ app.post("/save-file/:uuid", (req, res) => {
 });
 
 
-async function createNewBrowser(){
+async function startBrowser() {
+  if (browserInstance) {
+    console.log("Using existing Chromium instance...");
+    const context = await browserInstance.newContext({
+      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
+    });
+
+    const page = await context.newPage();
+
+    await page.evaluate(() => {
+      window.moveTo(0, 0);
+      window.resizeTo(screen.width, screen.height);
+    });
+
+    console.log("Chromium instance reused!");
+    return page;
+  }
+
   console.log("Starting new Chromium...");
   try {
-    const browser = await chromium.launch({
+    browserInstance = await chromium.launch({
       headless: false,
       executablePath:
         "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
@@ -318,7 +395,7 @@ async function createNewBrowser(){
       ],
     });
 
-    const context = await browser.newContext({
+    const context = await browserInstance.newContext({
       viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 
@@ -331,42 +408,6 @@ async function createNewBrowser(){
 
     console.log("Chromium launched!");
     return page;
-  } catch (error) {
-    console.error("Error launching Chromium:", error);
-  }
-}
-async function startBrowser() {
-  console.log("Starting Chromium...");
-
-  try {
-    const browser = await chromium.launch({
-      headless: false,
-      executablePath:
-        "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-gpu",
-        "--disable-dev-shm-usage",
-        "--remote-debugging-port=9222",
-        "--display=:99",
-        "--start-fullscreen", // <-- Forces Fullscreen Mode
-        "--window-position=0,0", // Ensures it starts at the top-left
-      ],
-    });
-
-    const context = await browser.newContext({
-      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
-    });
-
-    const page = await context.newPage();
-
-    await page.evaluate(() => {
-      window.moveTo(0, 0);
-      window.resizeTo(screen.width, screen.height);
-    });
-
-    console.log("Chromium launched!");
   } catch (error) {
     console.error("Error launching Chromium:", error);
   }
