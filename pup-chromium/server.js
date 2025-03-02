@@ -22,14 +22,16 @@ app.use(express.json());
 
 let playwrightProcess = null;
 let scriptPath = "";
+let browserInstance = null; // Reference to the browser instance
 
+// Start Xvfb
 exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
     console.log("Xvfb started on :99");
 
-    // :two: Start x11vnc after Xvfb is confirmed to be running
+    // Start x11vnc after Xvfb is confirmed to be running
     exec(
       "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
       (error) => {
@@ -38,8 +40,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
       }
     );
 
-    // :three: Start noVNC after x11vnc is confirmed
-
+    // Start noVNC after x11vnc is confirmed
     exec(
       `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
       (error) => {
@@ -50,8 +51,6 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
           );
       }
     );
-
-    startBrowser();
   }
 });
 
@@ -121,6 +120,13 @@ app.post("/stop", (req, res) => {
     } else {
       res.status(500).json({ message: "Failed to save recording!" });
     }
+
+    // Close the browser instance if it exists
+    if (browserInstance) {
+      await browserInstance.close();
+      browserInstance = null;
+      console.log("Browser instance closed.");
+    }
   });
 });
 
@@ -131,72 +137,28 @@ app.post("/replay", async (req, res) => {
     return res.status(400).json({ message: "UUID is required!" });
   }
 
-  const scriptPath = `/app/${uuid}.spec.ts`;
-  if (!fs.existsSync(scriptPath)) {
-    return res.status(404).json({ message: "Script file not found!" });
-  }
+  const runTest = require("./runtest");
 
   try {
-    const scriptContent = fs.readFileSync(scriptPath, "utf8");
-
-    let paramCode = "";
-    if (parameters && typeof parameters === "object") {
-      paramCode = Object.entries(parameters)
-        .map(([key, value]) => `const ${key} = ${JSON.stringify(value)};`)
-        .join("\n");
-    }
-
-    const replayScriptPath = `/app/${uuid}-replay.spec.ts`;
-    const replayScriptContent = `${paramCode}\n${scriptContent}`;
-    fs.writeFileSync(replayScriptPath, replayScriptContent, "utf8");
-
-    const replayProcess = spawn(
-      "npx",
-      [
-        "playwright",
-        "test",
-        replayScriptPath,
-        "--headed",
-        "--reporter",
-        "html",
-      ],
-      {
-        env: { ...process.env, DISPLAY: ":99" },
-        stdio: "pipe",
-      }
-    );
-
-    let logs = "";
-
-    replayProcess.stdout.on("data", (data) => {
-      logs += data.toString();
-      console.log(`STDOUT: ${data.toString()}`);
-    });
-
-    replayProcess.stderr.on("data", (data) => {
-      logs += data.toString();
-      console.error(`STDERR: ${data.toString()}`);
-    });
-
-    replayProcess.on("error", (error) => {
-      console.error("Error running Playwright:", error);
-      res.status(500).json({
-        message: "Failed to execute Playwright!",
-        error: error.message,
-      });
-    });
-
-    replayProcess.on("close", (code) => {
-      console.log(`Replay process exited with code ${code}`);
-
-      if (code !== 0) {
-        res.status(500).json({ message: "Replay failed!", logs });
+    // Ensure Xvfb is running and set the DISPLAY environment variable
+    exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", async (error) => {
+      if (error) {
+        console.error("Error starting Xvfb:", error);
+        return res.status(500).json({ message: "Error starting Xvfb!" });
       } else {
+        console.log("Xvfb started on :99");
+
+        // Transform the parameters object into an array of values
+        const args = Object.values(parameters);
+
+        console.log("Running test with args:", args);
+
+        // Set the DISPLAY environment variable and run the test
+        await runTest(args, { env: { DISPLAY: ":99" } });
+
         res.json({
           message: "Replay completed successfully!",
           status: "success",
-          logs,
-          replayUrl: "http://localhost:3000/replay-results",
         });
       }
     });
@@ -208,9 +170,6 @@ app.post("/replay", async (req, res) => {
     });
   }
 });
-
-app.use("/replay-results", express.static("/app/playwright-report"));
-
 app.get("/file/:uuid", (req, res) => {
   const { uuid } = req.params;
   const scriptPath = `/app/${uuid}.spec.ts`;
@@ -270,7 +229,7 @@ async function startBrowser() {
   console.log("Starting Chromium...");
 
   try {
-    const browser = await chromium.launch({
+    browserInstance = await chromium.launch({
       headless: false,
       executablePath:
         "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
@@ -286,7 +245,7 @@ async function startBrowser() {
       ],
     });
 
-    const context = await browser.newContext({
+    const context = await browserInstance.newContext({
       viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 
