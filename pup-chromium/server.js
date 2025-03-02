@@ -152,7 +152,14 @@ app.post("/replay", async (req, res) => {
 
     const replayProcess = spawn(
       "npx",
-      ["playwright", "test", replayScriptPath],
+      [
+        "playwright",
+        "test",
+        replayScriptPath,
+        "--headed",
+        "--reporter",
+        "html",
+      ],
       {
         env: { ...process.env, DISPLAY: ":99" },
         stdio: "pipe",
@@ -173,7 +180,7 @@ app.post("/replay", async (req, res) => {
 
     replayProcess.on("error", (error) => {
       console.error("Error running Playwright:", error);
-      return res.status(500).json({
+      res.status(500).json({
         message: "Failed to execute Playwright!",
         error: error.message,
       });
@@ -181,15 +188,17 @@ app.post("/replay", async (req, res) => {
 
     replayProcess.on("close", (code) => {
       console.log(`Replay process exited with code ${code}`);
-      if (code !== 0) {
-        return res.status(500).json({ message: "Replay failed!", logs });
-      }
 
-      res.json({
-        message: "Replay completed successfully!",
-        status: "success",
-        logs,
-      });
+      if (code !== 0) {
+        res.status(500).json({ message: "Replay failed!", logs });
+      } else {
+        res.json({
+          message: "Replay completed successfully!",
+          status: "success",
+          logs,
+          replayUrl: "http://localhost:3000/replay-results",
+        });
+      }
     });
   } catch (error) {
     console.error("Error during replay:", error);
@@ -199,6 +208,8 @@ app.post("/replay", async (req, res) => {
     });
   }
 });
+
+app.use("/replay-results", express.static("/app/playwright-report"));
 
 app.get("/file/:uuid", (req, res) => {
   const { uuid } = req.params;

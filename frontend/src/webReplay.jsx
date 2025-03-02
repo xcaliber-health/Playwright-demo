@@ -8,8 +8,8 @@ function WebReplay({ uuid }) {
   const [rawParams, setRawParams] = useState("{}");
   const [iframeUrl, setIframeUrl] = useState("");
   const [isJsonValid, setIsJsonValid] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch parameters from backend
   useEffect(() => {
     const fetchParameters = async () => {
       try {
@@ -25,14 +25,12 @@ function WebReplay({ uuid }) {
     fetchParameters();
   }, [uuid]);
 
-  // Update parameters from input fields
   const handleInputChange = (key, value) => {
     const updatedParams = { ...parameters, [key]: value };
     setParameters(updatedParams);
     setRawParams(JSON.stringify(updatedParams, null, 2));
   };
 
-  // Update parameters from raw JSON textarea
   const handleRawChange = (e) => {
     setRawParams(e.target.value);
     try {
@@ -51,13 +49,13 @@ function WebReplay({ uuid }) {
       return;
     }
 
+    setLoading(true);
     try {
       const response = await axios.post(`${backendUrl}/replay`, {
         uuid,
-        parameters: {
-          searchQuery: "genai",
-        },
+        parameters,
       });
+
       if (response.data.replayUrl) {
         setIframeUrl(response.data.replayUrl);
       } else {
@@ -65,20 +63,48 @@ function WebReplay({ uuid }) {
       }
     } catch (error) {
       alert("Failed to start replay. Check console for details.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      <div style={{ width: "50%", padding: "16px", textAlign: "center" }}>
-        <h2>Replay Controls</h2>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          width: "50%",
+          padding: "16px",
+          textAlign: "center",
+          borderRight: "1px solid #ddd",
+        }}
+      >
+        <h2 style={{ color: "#333" }}>🎬 Web Replay Controls</h2>
+        <p>Enter the parameters below to replay the recorded session.</p>
 
         {Object.keys(parameters).length > 0 ? (
           <form>
             {Object.entries(parameters).map(([key, value]) => (
-              <div key={key} style={{ marginBottom: "10px" }}>
-                <label style={{ display: "block", fontWeight: "bold" }}>
-                  {key}
+              <div
+                key={key}
+                style={{ marginBottom: "10px", textAlign: "left" }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "bold",
+                    color: "#555",
+                  }}
+                >
+                  {key}{" "}
+                  <span style={{ color: "gray", fontSize: "12px" }}>
+                    (Enter {typeof value})
+                  </span>
                 </label>
                 <input
                   type={typeof value === "number" ? "number" : "text"}
@@ -89,7 +115,7 @@ function WebReplay({ uuid }) {
                   placeholder={`Enter ${key}`}
                   style={{
                     padding: "8px",
-                    width: "80%",
+                    width: "100%",
                     fontSize: "16px",
                     border: "1px solid #ccc",
                     borderRadius: "5px",
@@ -102,25 +128,29 @@ function WebReplay({ uuid }) {
           <p>No parameters found.</p>
         )}
 
+        <h3 style={{ marginTop: "20px", textAlign: "left" }}>
+          🔧 Raw JSON Parameters
+        </h3>
         <textarea
           value={rawParams}
           onChange={handleRawChange}
-          rows="5"
+          rows={5}
           style={{
-            width: "80%",
+            width: "100%",
             padding: "8px",
-            marginTop: "10px",
             fontFamily: "monospace",
             border: isJsonValid ? "1px solid #ccc" : "1px solid red",
             borderRadius: "5px",
           }}
         ></textarea>
 
-        {!isJsonValid && <p style={{ color: "red" }}>Invalid JSON format!</p>}
+        {!isJsonValid && (
+          <p style={{ color: "red" }}>❌ Invalid JSON format!</p>
+        )}
 
         <button
           onClick={handleReplay}
-          disabled={!isJsonValid}
+          disabled={!isJsonValid || loading}
           style={{
             padding: "10px 20px",
             backgroundColor: isJsonValid ? "#007bff" : "#ccc",
@@ -131,7 +161,7 @@ function WebReplay({ uuid }) {
             marginTop: "10px",
           }}
         >
-          Replay
+          {loading ? "⏳ Replaying..." : "▶️ Start Replay"}
         </button>
 
         {iframeUrl && (
@@ -148,7 +178,10 @@ function WebReplay({ uuid }) {
         )}
       </div>
 
-      <div style={{ width: "50%", padding: "16px" }}>CODE EDITOR</div>
+      <div style={{ width: "50%", padding: "16px", textAlign: "center" }}>
+        <h2>📝 Code Editor</h2>
+        <p>This section can be used to edit or view logs.</p>
+      </div>
     </div>
   );
 }
