@@ -14,7 +14,7 @@ app.use(
   cors({
     origin: "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"]
+    allowedHeaders: ["Content-Type"],
   })
 );
 
@@ -23,7 +23,7 @@ app.use(express.json());
 let playwrightProcess = null;
 let scriptPath = "";
 
-exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
+exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
@@ -32,7 +32,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
     // :two: Start x11vnc after Xvfb is confirmed to be running
     exec(
       "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
-      error => {
+      (error) => {
         if (error) console.error("Error starting x11vnc:", error);
         else console.log("x11vnc running on port 5900");
       }
@@ -42,7 +42,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
 
     exec(
       `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
-      error => {
+      (error) => {
         if (error) console.error("Error starting noVNC:", error);
         else
           console.log(
@@ -78,11 +78,15 @@ app.post("/start", (req, res) => {
     {
       env: { ...process.env, DISPLAY: ":99" },
       detached: true,
-      stdio: "ignore"
+      stdio: "ignore",
     }
   );
 
-  res.json({ message: "Playwright recording started!", file: scriptPath, uuid: fileId });
+  res.json({
+    message: "Playwright recording started!",
+    file: scriptPath,
+    uuid: fileId,
+  });
 });
 
 app.post("/stop", (req, res) => {
@@ -106,14 +110,13 @@ app.post("/stop", (req, res) => {
 
         createNewFile(uuid, "json", JSON.stringify(response.parameters));
         console.log("Parameters saved to:", `/app/${uuid}.json`);
-
       } catch (error) {
         console.error("Error refactoring script:", error);
         res.status(500).json({ message: "Error refactoring script!" });
       }
       res.json({
         message: "Recording stopped and saved!",
-        file: scriptPath
+        file: scriptPath,
       });
     } else {
       res.status(500).json({ message: "Failed to save recording!" });
@@ -121,16 +124,115 @@ app.post("/stop", (req, res) => {
   });
 });
 
+app.post("/replay", async (req, res) => {
+  const { uuid, parameters } = req.body;
+
+  if (!uuid) {
+    return res.status(400).json({ message: "UUID is required!" });
+  }
+
+  const scriptPath = `/app/${uuid}.spec.ts`;
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(404).json({ message: "Script file not found!" });
+  }
+
+  try {
+    const scriptContent = fs.readFileSync(scriptPath, "utf8");
+
+    let paramCode = "";
+    if (parameters && typeof parameters === "object") {
+      paramCode = Object.entries(parameters)
+        .map(([key, value]) => `const ${key} = ${JSON.stringify(value)};`)
+        .join("\n");
+    }
+
+    const replayScriptPath = `/app/${uuid}-replay.spec.ts`;
+    const replayScriptContent = `${paramCode}\n${scriptContent}`;
+    fs.writeFileSync(replayScriptPath, replayScriptContent, "utf8");
+
+    const replayProcess = spawn(
+      "npx",
+      ["playwright", "test", replayScriptPath],
+      {
+        env: { ...process.env, DISPLAY: ":99" },
+        stdio: "pipe",
+      }
+    );
+
+    let logs = "";
+
+    replayProcess.stdout.on("data", (data) => {
+      logs += data.toString();
+      console.log(`STDOUT: ${data.toString()}`);
+    });
+
+    replayProcess.stderr.on("data", (data) => {
+      logs += data.toString();
+      console.error(`STDERR: ${data.toString()}`);
+    });
+
+    replayProcess.on("error", (error) => {
+      console.error("Error running Playwright:", error);
+      return res.status(500).json({
+        message: "Failed to execute Playwright!",
+        error: error.message,
+      });
+    });
+
+    replayProcess.on("close", (code) => {
+      console.log(`Replay process exited with code ${code}`);
+      if (code !== 0) {
+        return res.status(500).json({ message: "Replay failed!", logs });
+      }
+
+      res.json({
+        message: "Replay completed successfully!",
+        status: "success",
+        logs,
+      });
+    });
+  } catch (error) {
+    console.error("Error during replay:", error);
+    res.status(500).json({
+      message: "Error during replay execution!",
+      error: error.message,
+    });
+  }
+});
+
 app.get("/file/:uuid", (req, res) => {
   const { uuid } = req.params;
   const scriptPath = `/app/${uuid}.spec.ts`;
   const parametersPath = `/app/${uuid}.json`;
 
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).json({ message: " File not found!" });
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(404).json({ message: "Script file not found!" });
   }
+
+  let scriptContent = "";
+  let parameters = null;
+
+  try {
+    scriptContent = fs.readFileSync(scriptPath, "utf-8");
+  } catch (error) {
+    console.error("Error reading script file:", error);
+    return res.status(500).json({ message: "Error reading script file" });
+  }
+
+  if (fs.existsSync(parametersPath)) {
+    try {
+      const paramContent = fs.readFileSync(parametersPath, "utf-8");
+      parameters = JSON.parse(paramContent);
+    } catch (error) {
+      console.error("Error reading parameters file:", error);
+      parameters = null;
+    }
+  }
+
+  res.json({
+    script: scriptContent,
+    parameters: parameters,
+  });
 });
 
 app.post("/save-file/:uuid", (req, res) => {
@@ -169,12 +271,12 @@ async function startBrowser() {
         "--remote-debugging-port=9222",
         "--display=:99",
         "--start-fullscreen", // <-- Forces Fullscreen Mode
-        "--window-position=0,0" // Ensures it starts at the top-left
-      ]
+        "--window-position=0,0", // Ensures it starts at the top-left
+      ],
     });
 
     const context = await browser.newContext({
-      viewport: { width: 1920, height: 1080 } // Ensures full-screen Playwright window
+      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 
     const page = await context.newPage();
