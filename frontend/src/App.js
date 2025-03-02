@@ -3,7 +3,7 @@ import WebReplay from "./webReplay";
 
 const backendUrl = "http://localhost:3000";
 function WebRecorder() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState("https://www.github.com/");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFile, setRecordedFile] = useState(null);
   const [recordingUuid, setRecordingUuid] = useState(null);

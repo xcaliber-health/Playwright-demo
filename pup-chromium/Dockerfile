@@ -2,6 +2,8 @@ FROM node:18
 
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y \
+    psmisc\
+    lsof \
     xvfb \
     x11vnc \
     novnc \

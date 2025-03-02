@@ -22,16 +22,75 @@ app.use(express.json());
 
 let playwrightProcess = null;
 let scriptPath = "";
-let browserInstance = null; // Reference to the browser instance
 
-// Start Xvfb
+function startServices(callback) {
+  exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
+    if (error) {
+      console.error("Error starting Xvfb:", error);
+      return callback(error);
+    } else {
+      console.log("Xvfb started on :99");
+
+      startX11vnc(callback);
+    }
+  });
+}
+
+function startX11vnc(callback, retries = 3) {
+  exec(
+    "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
+    (error) => {
+      if (error) {
+        console.error("Error starting x11vnc:", error);
+
+        if (retries > 0) {
+          console.log(`Retrying x11vnc (${retries} attempts left)...`);
+          setTimeout(() => startX11vnc(callback, retries - 1), 2000);
+        } else {
+          return callback(error);
+        }
+      } else {
+        console.log("x11vnc running on port 5900");
+
+        exec(
+          `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
+          (error) => {
+            if (error) {
+              console.error("Error starting noVNC:", error);
+              return callback(error);
+            } else {
+              console.log(
+                `noVNC available at http://localhost:${VNC_PORT}/vnc.html`
+              );
+              callback(null);
+            }
+          }
+        );
+      }
+    }
+  );
+}
+
+function stopServices(callback) {
+  exec("killall Xvfb x11vnc novnc_proxy", (error) => {
+    if (error) {
+      console.error("Error stopping services:", error);
+      return callback(error);
+    } else {
+      console.log("Services stopped successfully.");
+      callback(null);
+    }
+  });
+}
+
+
 exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
     console.log("Xvfb started on :99");
 
-    // Start x11vnc after Xvfb is confirmed to be running
+    // :two: Start x11vnc after Xvfb is confirmed to be running
     exec(
       "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
       (error) => {
@@ -40,7 +99,8 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
       }
     );
 
-    // Start noVNC after x11vnc is confirmed
+    // :three: Start noVNC after x11vnc is confirmed
+
     exec(
       `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
       (error) => {
@@ -51,6 +111,8 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
           );
       }
     );
+
+    startBrowser();
   }
 });
 
@@ -94,8 +156,15 @@ app.post("/stop", (req, res) => {
     return res.status(400).json({ message: "No recording in progress!" });
   }
 
-  exec("pkill -f 'playwright codegen'", async () => {
+  exec("pkill -f 'playwright codegen';pkill chromium; pkill Xvfb; pkill x11vnc", async () => {
     playwrightProcess = null;
+    exec("lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9", (error) => {
+      if (error) {
+        console.error("Error killing process on port 5900:", error);
+      } else {
+        console.log("Killed process using port 5900");
+      }
+    });
 
     if (fs.existsSync(scriptPath)) {
       console.log("Recording saved to:", scriptPath);
@@ -120,13 +189,6 @@ app.post("/stop", (req, res) => {
     } else {
       res.status(500).json({ message: "Failed to save recording!" });
     }
-
-    // Close the browser instance if it exists
-    if (browserInstance) {
-      await browserInstance.close();
-      browserInstance = null;
-      console.log("Browser instance closed.");
-    }
   });
 });
 
@@ -137,30 +199,33 @@ app.post("/replay", async (req, res) => {
     return res.status(400).json({ message: "UUID is required!" });
   }
 
-  const runTest = require("./runtest");
+  const runTestPath = `/app/${uuid}.spec.ts`;
+  if (!fs.existsSync(runTestPath)) {
+    return res.status(404).json({ message: "Script file not found!" });
+  }
+
+  const runTest = require(runTestPath);
 
   try {
-    // Ensure Xvfb is running and set the DISPLAY environment variable
-    exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", async (error) => {
+
+    // Start services before running the test
+    startServices(async (error) => {
       if (error) {
-        console.error("Error starting Xvfb:", error);
-        return res.status(500).json({ message: "Error starting Xvfb!" });
-      } else {
-        console.log("Xvfb started on :99");
-
-        // Transform the parameters object into an array of values
-        const args = Object.values(parameters);
-
-        console.log("Running test with args:", args);
-
-        // Set the DISPLAY environment variable and run the test
-        await runTest(args, { env: { DISPLAY: ":99" } });
-
-        res.json({
-          message: "Replay completed successfully!",
-          status: "success",
-        });
+        return res.status(500).json({ message: "Error starting services!" });
       }
+
+      const page = await createNewBrowser();
+
+      // Convert parameters map to an array of arguments
+      const args = Object.values(parameters);
+
+      // Run the test with the provided arguments
+      await runTest(page,args);
+
+      res.json({
+        message: "Replay completed successfully!",
+        status: "success",
+      });
     });
   } catch (error) {
     console.error("Error during replay:", error);
@@ -169,7 +234,15 @@ app.post("/replay", async (req, res) => {
       error: error.message,
     });
   }
+
+  // Stop services after running the test
+  stopServices((error) => {
+    if (error) {
+      console.error("Error stopping services:", error);
+    }
+  });
 });
+
 app.get("/file/:uuid", (req, res) => {
   const { uuid } = req.params;
   const scriptPath = `/app/${uuid}.spec.ts`;
@@ -225,11 +298,11 @@ app.post("/save-file/:uuid", (req, res) => {
   res.json({ message: "Code updated successfully!" });
 });
 
-async function startBrowser() {
-  console.log("Starting Chromium...");
 
+async function createNewBrowser(){
+  console.log("Starting new Chromium...");
   try {
-    browserInstance = await chromium.launch({
+    const browser = await chromium.launch({
       headless: false,
       executablePath:
         "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
@@ -245,7 +318,44 @@ async function startBrowser() {
       ],
     });
 
-    const context = await browserInstance.newContext({
+    const context = await browser.newContext({
+      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
+    });
+
+    const page = await context.newPage();
+
+    await page.evaluate(() => {
+      window.moveTo(0, 0);
+      window.resizeTo(screen.width, screen.height);
+    });
+
+    console.log("Chromium launched!");
+    return page;
+  } catch (error) {
+    console.error("Error launching Chromium:", error);
+  }
+}
+async function startBrowser() {
+  console.log("Starting Chromium...");
+
+  try {
+    const browser = await chromium.launch({
+      headless: false,
+      executablePath:
+        "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--remote-debugging-port=9222",
+        "--display=:99",
+        "--start-fullscreen", // <-- Forces Fullscreen Mode
+        "--window-position=0,0", // Ensures it starts at the top-left
+      ],
+    });
+
+    const context = await browser.newContext({
       viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 

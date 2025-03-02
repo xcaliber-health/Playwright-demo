@@ -1,8 +1,6 @@
 const { chromium } = require("playwright");
-const runTest = async (args) => {
+const runTest = async (page , args) => {
   const [username, password] = args;
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
 
   try {
     await page.goto("https://github.com/");
@@ -14,8 +12,6 @@ const runTest = async (args) => {
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
   } catch (error) {
     console.error("Error during Playwright test:", error);
-  } finally {
-    await browser.close();
   }
 };
 
