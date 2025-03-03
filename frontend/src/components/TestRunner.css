@@ -1,0 +1,36 @@
+.test-runner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.parameters-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.code-section {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.code-section pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+button {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
