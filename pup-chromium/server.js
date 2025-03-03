@@ -15,7 +15,7 @@ app.use(
   cors({
     origin: "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"]
+    allowedHeaders: ["Content-Type"],
   })
 );
 
@@ -30,7 +30,7 @@ function startServices(callback) {
     if (stdout) {
       console.log("Xvfb is already running.");
     } else {
-      exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
+      exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
         if (error) {
           console.error("Error starting Xvfb:", error);
           return callback(error);
@@ -45,7 +45,7 @@ function startServices(callback) {
       } else {
         exec(
           "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
-          error => {
+          (error) => {
             if (error) {
               console.error("Error starting x11vnc:", error);
               return callback(error);
@@ -62,7 +62,7 @@ function startServices(callback) {
         } else {
           exec(
             `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
-            error => {
+            (error) => {
               if (error) {
                 console.error("Error starting noVNC:", error);
                 return callback(error);
@@ -80,7 +80,7 @@ function startServices(callback) {
 }
 
 function stopServices(callback) {
-  exec("killall Xvfb x11vnc novnc_proxy", error => {
+  exec("killall Xvfb x11vnc novnc_proxy", (error) => {
     if (error) {
       console.error("Error stopping services:", error);
       return callback(error);
@@ -92,7 +92,7 @@ function stopServices(callback) {
             browserInstance = null;
             callback(null);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("Error closing browser instance:", err);
             callback(err);
           });
@@ -103,7 +103,7 @@ function stopServices(callback) {
   });
 }
 
-exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
+exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
@@ -112,7 +112,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
     // :two: Start x11vnc after Xvfb is confirmed to be running
     exec(
       "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
-      error => {
+      (error) => {
         if (error) console.error("Error starting x11vnc:", error);
         else console.log("x11vnc running on port 5900");
       }
@@ -122,7 +122,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", error => {
 
     exec(
       `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
-      error => {
+      (error) => {
         if (error) console.error("Error starting noVNC:", error);
         else
           console.log(
@@ -158,14 +158,14 @@ app.post("/start", (req, res) => {
     {
       env: { ...process.env, DISPLAY: ":99" },
       detached: true,
-      stdio: "ignore"
+      stdio: "ignore",
     }
   );
 
   res.json({
     message: "Playwright recording started!",
     file: scriptPath,
-    uuid: fileId
+    uuid: fileId,
   });
 });
 
@@ -181,7 +181,7 @@ app.post("/stop", (req, res) => {
       playwrightProcess = null;
       exec(
         "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
-        error => {
+        (error) => {
           if (error) {
             console.error("Error killing process on port 5900:", error);
           } else {
@@ -208,7 +208,7 @@ app.post("/stop", (req, res) => {
         }
         res.json({
           message: "Recording stopped and saved!",
-          file: scriptPath
+          file: scriptPath,
         });
       } else {
         res.status(500).json({ message: "Failed to save recording!" });
@@ -233,7 +233,7 @@ app.post("/replay", async (req, res) => {
 
   try {
     // Start services before running the test
-    startServices(async error => {
+    startServices(async (error) => {
       if (error) {
         return res.status(500).json({ message: "Error starting services!" });
       }
@@ -251,13 +251,13 @@ app.post("/replay", async (req, res) => {
         console.log("Test completed successfully!");
         res.json({
           message: "Replay completed successfully!",
-          status: "success"
+          status: "success",
         });
       } catch (testError) {
         console.error("Error during test execution:", testError);
         res.status(500).json({
           message: "Error during test execution!",
-          error: testError.message
+          error: testError.message,
         });
       }
     });
@@ -265,7 +265,7 @@ app.post("/replay", async (req, res) => {
     console.error("Error during replay:", error);
     res.status(500).json({
       message: "Error during replay execution!",
-      error: error.message
+      error: error.message,
     });
   }
 
@@ -308,18 +308,18 @@ app.get("/file/:uuid", (req, res) => {
 
   res.json({
     script: scriptContent,
-    parameters: parameters
+    parameters: parameters,
   });
 });
 
 app.get("/scripts", (req, res) => {
   const files = fs.readdirSync("/app");
   const scriptDetails = files
-    .filter(file => file.endsWith(".spec.ts"))
-    .map(scriptFile => {
+    .filter((file) => file.endsWith(".spec.ts"))
+    .map((scriptFile) => {
       const uuid = scriptFile.replace(".spec.ts", ""); // Extract UUID
-      const scriptPath = path.join(directoryPath, scriptFile);
-      const parametersPath = path.join(directoryPath, `${uuid}.json`);
+      const scriptPath = path.join("/app/", scriptFile);
+      const parametersPath = path.join("/app/", `${uuid}.json`);
 
       let scriptContent = "";
       let parameters = "";
@@ -345,7 +345,7 @@ app.get("/scripts", (req, res) => {
         uuid: uuid,
         tag: "script",
         script: scriptContent,
-        parameters: parameters
+        parameters: parameters,
       };
     });
 
@@ -398,7 +398,7 @@ app.post("/agent/operations", (req, res) => {
     JSON.stringify({
       id: id,
       title: title,
-      prompt: prompt
+      prompt: prompt,
     }),
     { encoding: "utf8" }
   );
@@ -434,7 +434,7 @@ app.patch("/agent/operations/:id", (req, res) => {
     message: "Agent session updated successfully!",
     id: id,
     title: title,
-    prompt: prompt
+    prompt: prompt,
   });
 });
 
@@ -471,7 +471,7 @@ app.get("/agent/operations", (req, res) => {
   const agentSessions = fs.readdirSync(agentSessionPath);
 
   const agentSessionDetails = agentSessions
-    .map(session => {
+    .map((session) => {
       const agentSessionId = session.replace("-agent.json", "");
       console.log("agentSessionId:", agentSessionId);
 
@@ -484,7 +484,7 @@ app.get("/agent/operations", (req, res) => {
         return null;
       }
     })
-    .filter(detail => detail !== null);
+    .filter((detail) => detail !== null);
   res.json(agentSessionDetails);
 });
 
@@ -512,7 +512,7 @@ async function startBrowser() {
   if (browserInstance) {
     console.log("Using existing Chromium instance...");
     const context = await browserInstance.newContext({
-      viewport: { width: 1920, height: 1080 } // Ensures full-screen Playwright window
+      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 
     const page = await context.newPage();
@@ -540,12 +540,12 @@ async function startBrowser() {
         "--remote-debugging-port=9222",
         "--display=:99",
         "--start-fullscreen", // <-- Forces Fullscreen Mode
-        "--window-position=0,0" // Ensures it starts at the top-left
-      ]
+        "--window-position=0,0", // Ensures it starts at the top-left
+      ],
     });
 
     const context = await browserInstance.newContext({
-      viewport: { width: 1920, height: 1080 } // Ensures full-screen Playwright window
+      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
     });
 
     const page = await context.newPage();

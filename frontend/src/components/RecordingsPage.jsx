@@ -2,19 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { Editor } from "@monaco-editor/react";
 import { Play } from "lucide-react";
 
-const mockRecordings = [
-  { id: "rec1", name: "Recording 1" },
-  { id: "rec2", name: "Recording 2" },
-  { id: "rec3", name: "Recording 3" },
-];
-
 const VNC_Url = import.meta.env.VITE_VNC_URL;
 const backendUrl = import.meta.env.VITE_BASE_URL;
 
-console.log(backendUrl);
-
 const RecordingsPage = () => {
-  const [recordings, setRecordings] = useState(mockRecordings);
+  const [recordings, setRecordings] = useState();
+  const [agentScripts, setAgentScripts] = useState();
   const [selectedRecording, setSelectedRecording] = useState(null);
   const [code, setCode] = useState("// Loading...");
   const [parameters, setParameters] = useState({});
@@ -26,10 +19,19 @@ const RecordingsPage = () => {
   useEffect(() => {
     fetch(`${backendUrl}/scripts`)
       .then((res) => res.json())
-      .then((data) => setRecordings(data));
-  }, []);
+      .then((data) => {
+        const filteredRecordings = data?.scriptDetailList.filter(
+          (script) => script.tag === "script"
+        );
+        setRecordings(filteredRecordings);
 
-  console.log(recordings);
+        const filteredScripts = data?.scriptDetailList.filter(
+          (script) => script.tag === "agent"
+        );
+
+        setAgentScripts(filteredScripts);
+      });
+  }, [recordings, agentScripts]);
 
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);
@@ -63,25 +65,49 @@ const RecordingsPage = () => {
 
   return (
     <div className="w-full h-screen flex gap-6 p-5">
-      <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
-        <h3>Recordings</h3>
-        <ul>
-          {recordings.map((rec) => (
-            <li
-              key={rec.uuid}
-              className="flex justify-between items-center bg-gray-900 border-b border-gray-700 p-2 m-2"
-            >
-              <span>{rec.name}</span>
-              <button
-                onClick={() =>
-                  loadRecording("5c5787bd-c96e-4224-9e30-69ad30706153")
-                }
+      <div className="w-full flex flex-col gap-4">
+        <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
+          <h3>Recordings</h3>
+          <ul>
+            {recordings?.map((rec) => (
+              <li
+                key={rec?.uuid}
+                className="flex justify-between items-center text-white bg-gray-900 border-b border-gray-700 p-2 m-2"
               >
-                <Play size={20} className="text-blue-500 hover:text-blue-300" />
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span>{rec?.uuid}</span>
+                <button onClick={() => loadRecording(rec?.uuid)}>
+                  <Play
+                    size={20}
+                    className="text-blue-500 hover:text-blue-300"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
+          <h3>Agent Scripts</h3>
+          <ul>
+            {agentScripts?.map((script) => (
+              <li
+                key={script?.id}
+                className="flex justify-between items-center text-white bg-gray-900 border-b border-gray-700 p-2 m-2"
+              >
+                <span>{script?.id}</span>
+                <button
+                // onClick={() =>
+                //   loadRecording("5c5787bd-c96e-4224-9e30-69ad30706153")
+                // }
+                >
+                  <Play
+                    size={20}
+                    className="text-blue-500 hover:text-blue-300"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {selectedRecording && (
