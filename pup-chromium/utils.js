@@ -7,8 +7,7 @@ require("dotenv").config();
 
 console.log("env api key:", process.env.GEMINI_API_KEY);
 
-const apiKey = "AIzaSyCpQtIs_4ym0ES5NEBis7HIR5U9-mlc-ig";
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
