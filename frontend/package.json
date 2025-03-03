@@ -13,6 +13,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.0.9",
     "lucide-react": "^0.477.0",
+    "playwright-demo": "file:",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0",
