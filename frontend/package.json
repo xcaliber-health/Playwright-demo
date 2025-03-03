@@ -5,15 +5,18 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@novnc/novnc": "^1.6.0-beta",
+    "@tailwindcss/cli": "^4.0.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.1",
     "frontend": "file:",
+    "lucide-react": "^0.477.0",
     "monaco-editor": "^0.52.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.2.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
