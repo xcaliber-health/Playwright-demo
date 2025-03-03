@@ -1,8 +1,9 @@
 import { useState } from "react";
-import TestRunner from "./TestRunner";
+import TestRunner from "./RecordingsPage";
 
 const backendUrl = "http://localhost:3000";
-function WebRecorder() {
+
+function WebRecorder({ setActiveTab }) {
   const [url, setUrl] = useState("https://www.github.com/");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingUuid, setRecordingUuid] = useState(null);
@@ -47,96 +48,68 @@ function WebRecorder() {
       alert(data.message);
       setIsRecording(false);
       setShowTestRunner(true);
+      setActiveTab("Tab3");
     } catch (error) {
       console.error("Error stopping recording:", error);
     }
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px", fontFamily: "Arial" }}>
-      <h2>Web Recorder</h2>
-
-      {!showTestRunner && (
-        <>
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter website URL"
-            style={{
-              padding: "10px",
-              width: "60%",
-              fontSize: "16px",
-              marginBottom: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-            }}
-          />
-          <div className="flex flex-start bg-black">
-            <button
-              onClick={startRecording}
-              disabled={isRecording}
-              style={{
-                padding: "10px 20px",
-                margin: "10px",
-                fontSize: "16px",
-                backgroundColor: isRecording ? "#ccc" : "#28a745",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: isRecording ? "not-allowed" : "pointer",
-              }}
-            >
-              {isRecording ? "Recording..." : "Start Recording"}
-            </button>
-            <button
-              onClick={stopRecording}
-              disabled={!isRecording}
-              style={{
-                padding: "10px 20px",
-                fontSize: "16px",
-                backgroundColor: isRecording ? "#dc3545" : "#ccc",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: !isRecording ? "not-allowed" : "pointer",
-              }}
-            >
-              Stop Recording
-            </button>
-          </div>
-        </>
-      )}
-
-      {isRecording && (
-        <>
-          <h3>VNC Browser View</h3>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
+    <div className="w-full flex h-screen p-5 font-sans gap-5">
+      {/* Left Panel */}
+      <div className="w-1/2 bg-gray-100 p-5 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold mb-4">Web Recorder</h2>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter website URL"
+          className="w-full p-3 text-lg border border-gray-300 rounded mb-4"
+        />
+        <div className="flex gap-4">
+          <button
+            onClick={startRecording}
+            disabled={isRecording}
+            className={`w-full py-3 text-lg font-semibold text-white rounded transition ${
+              isRecording
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
           >
+            {isRecording ? "Recording..." : "Start Recording"}
+          </button>
+          <button
+            onClick={stopRecording}
+            disabled={!isRecording}
+            className={`w-full py-3 text-lg font-semibold text-white rounded transition ${
+              isRecording
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Stop Recording
+          </button>
+        </div>
+      </div>
+
+      <div className="w-1/2 flex-1 bg-white p-5 rounded-lg shadow-md">
+        {isRecording ? (
+          <>
+            <h3 className="text-lg font-semibold mb-4">VNC Browser View</h3>
             <iframe
               src={vncUrl}
-              width="100%"
-              height="900px"
-              style={{
-                display: "block",
-                border: "1px solid #ccc",
-                borderRadius: "5px",
-                overflow: "hidden",
-                objectFit: "cover",
-                transformOrigin: "top left",
-              }}
+              className="w-full h-[85vh] border border-gray-300 rounded"
               title="VNC Viewer"
             />
-          </div>
-        </>
-      )}
-
-      {showTestRunner && <TestRunner uuid={recordingUuid} />}
+          </>
+        ) : showTestRunner ? (
+          <TestRunner uuid={recordingUuid} />
+        ) : (
+          <p className="text-gray-500 text-center text-lg">
+            Start recording to see the VNC browser.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
