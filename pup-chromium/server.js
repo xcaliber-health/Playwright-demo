@@ -187,7 +187,7 @@ app.post("/start", (req, res) => {
 
   playwrightProcess = spawn(
     "npx",
-    ["playwright", "codegen", "--no-ui", "--output", scriptPath, targetUrl],
+    ["playwright", "codegen", "--output", scriptPath, targetUrl],
     {
       env: { ...process.env, DISPLAY: ":99" },
       detached: true,

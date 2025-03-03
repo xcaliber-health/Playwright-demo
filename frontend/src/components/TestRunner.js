@@ -141,7 +141,7 @@ const TestRunner = ({ uuid }) => {
                     marginBottom: "5px",
                   }}
                 >
-                  {param.description}
+                  ({param.description})
                 </small>
 
                 <input
