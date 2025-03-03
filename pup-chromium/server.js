@@ -315,7 +315,7 @@ app.get("/file/:uuid", (req, res) => {
 app.get("/scripts", (req, res) => {
   const files = fs.readdirSync("/app");
   const scriptDetails = files
-    .filter(file => file.endsWith(".spec.ts")) 
+    .filter(file => file.endsWith(".spec.ts"))
     .map(scriptFile => {
       const uuid = scriptFile.replace(".spec.ts", ""); // Extract UUID
       const scriptPath = path.join(directoryPath, scriptFile);
@@ -343,42 +343,38 @@ app.get("/scripts", (req, res) => {
 
       return {
         uuid: uuid,
-        tag:"script",
+        tag: "script",
         script: scriptContent,
         parameters: parameters
       };
     });
 
+  const agentSessionPath = path.join(__dirname, "app", "agent");
 
-    const agentSessionPath = path.join(__dirname, "app", "agent");
+  if (fs.existsSync(agentSessionPath)) {
+    const agentSessions = fs.readdirSync(agentSessionPath);
 
-  if (!fs.existsSync(agentSessionPath)) {
-    return res
-      .status(404)
-      .json({ message: "Agent sessions directory not found!" });
+    const agentSessionDetails = agentSessions
+      .map(session => {
+        const agentSessionId = session.replace("-agent.json", "");
+        console.log("agentSessionId:", agentSessionId);
+
+        const filePath = path.join(agentSessionPath, session);
+
+        if (fs.existsSync(filePath)) {
+          const agentSessionContent = fs.readFileSync(filePath, "utf-8");
+          const detail = JSON.parse(agentSessionContent);
+          detail.tag = "agent";
+          return detail;
+        } else {
+          return null;
+        }
+      })
+      .filter(detail => detail !== null);
+
+    scriptDetails.push(...agentSessionDetails);
   }
 
-  const agentSessions = fs.readdirSync(agentSessionPath);
-
-  const agentSessionDetails = agentSessions
-    .map(session => {
-      const agentSessionId = session.replace("-agent.json", "");
-      console.log("agentSessionId:", agentSessionId);
-
-      const filePath = path.join(agentSessionPath, session);
-
-      if (fs.existsSync(filePath)) {
-        const agentSessionContent = fs.readFileSync(filePath, "utf-8");
-        const detail = JSON.parse(agentSessionContent);
-        detail.tag = "agent";
-        return detail;
-      } else {
-        return null; 
-      }
-    })
-    .filter(detail => detail !== null);
-
-  scriptDetails.push(...agentSessionDetails);
   res.json({ scriptDeatilList: scriptDetails });
 });
 
@@ -485,10 +481,10 @@ app.get("/agent/operations", (req, res) => {
         const agentSessionContent = fs.readFileSync(filePath, "utf-8");
         return JSON.parse(agentSessionContent);
       } else {
-        return null; 
+        return null;
       }
     })
-    .filter(detail => detail !== null); 
+    .filter(detail => detail !== null);
   res.json(agentSessionDetails);
 });
 
