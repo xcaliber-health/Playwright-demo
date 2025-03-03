@@ -54,15 +54,14 @@ const RecordingsPage = () => {
   };
 
   return (
-    <div className="p-5 max-w-[1200px] mx-auto flex gap-6">
-      {/* Recordings List */}
-      <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white">
+    <div className="w-full h-screen flex gap-6 p-5">
+      <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
         <h3>Recordings</h3>
         <ul>
           {recordings.map((rec) => (
             <li
               key={rec.uuid}
-              className="flex justify-between items-center border-b border-gray-700 py-2"
+              className="flex justify-between items-center bg-gray-900 border-b border-gray-700 p-2 m-2"
             >
               <span>{rec.name}</span>
               <button
@@ -89,7 +88,6 @@ const RecordingsPage = () => {
             <h3 className="text-xl font-semibold mb-4">Test Execution</h3>
 
             <div className="flex gap-6">
-              {/* Parameters Section */}
               <div className="w-1/3">
                 <h4 className="text-lg font-semibold mb-2">Parameters</h4>
                 {Object.entries(parameters).map(([key, param]) => (
@@ -121,7 +119,6 @@ const RecordingsPage = () => {
                 </button>
               </div>
 
-              {/* Code Editor Section */}
               <div className="w-2/3 rounded-md overflow-hidden">
                 <h4 className="text-lg font-semibold mb-2">Code Editor</h4>
                 {loading ? (
