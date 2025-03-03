@@ -1,14 +1,13 @@
 import { useState } from "react";
-import WebReplay from "./webReplay";
+import TestRunner from "./components/TestRunner";
 
 const backendUrl = "http://localhost:3000";
 function WebRecorder() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState("https://www.github.com/");
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedFile, setRecordedFile] = useState(null);
   const [recordingUuid, setRecordingUuid] = useState(null);
-  const vncUrl =
-    "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
+  const [showTestRunner, setShowTestRunner] = useState(false);
+  const vncUrl = "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
 
   const startRecording = async () => {
     if (!url.trim()) {
@@ -27,7 +26,7 @@ function WebRecorder() {
       const data = await response.json();
       alert(data.message);
       setIsRecording(true);
-      setRecordedFile(null);
+      setShowTestRunner(false);
       setRecordingUuid(data.uuid);
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -46,10 +45,7 @@ function WebRecorder() {
       const data = await response.json();
       alert(data.message);
       setIsRecording(false);
-
-      if (data.file) {
-        setRecordedFile(data.file);
-      }
+      setShowTestRunner(true);
     } catch (error) {
       console.error("Error stopping recording:", error);
     }
@@ -59,7 +55,7 @@ function WebRecorder() {
     <div style={{ textAlign: "center", padding: "20px", fontFamily: "Arial" }}>
       <h2>Web Recorder</h2>
 
-      {!recordedFile && (
+      {!showTestRunner && (
         <>
           <input
             type="text"
@@ -139,11 +135,7 @@ function WebRecorder() {
         </>
       )}
 
-      {recordedFile && (
-        <WebReplay
-          uuid={recordedFile.split("/").pop().replace(".spec.ts", "")}
-        />
-      )}
+      {showTestRunner && <TestRunner uuid={recordingUuid} />}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import CodeEditor from "./codeEditor";
 
 const backendUrl = "http://localhost:3000";
 
@@ -179,8 +180,9 @@ function WebReplay({ uuid }) {
       </div>
 
       <div style={{ width: "50%", padding: "16px", textAlign: "center" }}>
-        <h2>📝 Code Editor</h2>
-        <p>This section can be used to edit or view logs.</p>
+        {/* <h2>📝 Code Editor</h2>
+        <p>This section can be used to edit or view logs.</p> */}
+        {/* <CodeEditor uuid={uuid} /> */}
       </div>
     </div>
   );
