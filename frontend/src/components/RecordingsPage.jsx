@@ -8,8 +8,10 @@ const mockRecordings = [
   { id: "rec3", name: "Recording 3" },
 ];
 
-const VNC_Url = import.meta.env.VNC_URL;
-const backendUrl = import.meta.env.BASE_URL;
+const VNC_Url = import.meta.env.VITE_VNC_URL;
+const backendUrl = import.meta.env.VITE_BASE_URL;
+
+console.log(backendUrl);
 
 const RecordingsPage = () => {
   const [recordings, setRecordings] = useState(mockRecordings);
@@ -21,11 +23,13 @@ const RecordingsPage = () => {
   const [isReplaying, setIsReplaying] = useState(false);
   const editorRef = useRef(null);
 
-  // useEffect(() => {
-  // fetch(`${backendUrl}/files`)
-  //     .then((res) => res.json())
-  //     .then((data) => setRecordings(data));
-  // }, []);
+  useEffect(() => {
+    fetch(`${backendUrl}/scripts`)
+      .then((res) => res.json())
+      .then((data) => setRecordings(data));
+  }, []);
+
+  console.log(recordings);
 
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);

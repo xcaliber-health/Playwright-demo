@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Play, StopCircle } from "lucide-react";
 import TestRunner from "./RecordingsPage";
 
-const VNC_Url = import.meta.env.VNC_URL;
+const VNC_Url = import.meta.env.VITE_VNC_URL;
 
 function WebRecorder({ setActiveTab }) {
   const [url, setUrl] = useState("https://www.github.com/");
