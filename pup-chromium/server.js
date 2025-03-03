@@ -374,18 +374,21 @@ app.patch("/agent/operations/:id", (req, res) => {
 
 app.get("/agent/operations/:id", (req, res) => {
   const { id } = req.params;
+  console.log("id", id);
   const agentSessionPath = path.join(
     __dirname,
     "app",
     "agent",
     `${id}-agent.json`
   );
+  console.log("agentSessionPath", agentSessionPath);
   if (!fs.existsSync(agentSessionPath)) {
     return res.status(404).json({ message: "Agent session not found!" });
   }
 
   const agentSessionContent = fs.readFileSync(agentSessionPath, "utf-8");
   const agentSession = JSON.parse(agentSessionContent);
+  console.log("agentSession", agentSession);  
 
   res.json(agentSession);
 });
