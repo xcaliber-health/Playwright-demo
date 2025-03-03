@@ -27,7 +27,7 @@ function TabsPage() {
 
       <div className="mt-4 w-full border border-gray-300 rounded-lg p-6 shadow-sm">
         {activeTab === "Tab1" && <EhrOperator />}
-        {activeTab === "Tab2" && <WebRecorder />}
+        {activeTab === "Tab2" && <WebRecorder setActiveTab={setActiveTab} />}
         {activeTab === "Tab3" && <RecordingsPage />}
       </div>
     </div>

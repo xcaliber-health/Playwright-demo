@@ -3,7 +3,7 @@ import TestRunner from "./RecordingsPage";
 
 const backendUrl = "http://localhost:3000";
 
-function WebRecorder() {
+function WebRecorder({ setActiveTab }) {
   const [url, setUrl] = useState("https://www.github.com/");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingUuid, setRecordingUuid] = useState(null);
@@ -48,6 +48,7 @@ function WebRecorder() {
       alert(data.message);
       setIsRecording(false);
       setShowTestRunner(true);
+      setActiveTab("Tab3");
     } catch (error) {
       console.error("Error stopping recording:", error);
     }
