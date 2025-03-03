@@ -8,6 +8,9 @@ const mockRecordings = [
   { id: "rec3", name: "Recording 3" },
 ];
 
+const VNC_Url = import.meta.env.VNC_URL;
+const backendUrl = import.meta.env.BASE_URL;
+
 const RecordingsPage = () => {
   const [recordings, setRecordings] = useState(mockRecordings);
   const [selectedRecording, setSelectedRecording] = useState(null);
@@ -19,7 +22,7 @@ const RecordingsPage = () => {
   const editorRef = useRef(null);
 
   // useEffect(() => {
-  //   fetch(`http://localhost:3000/files`)
+  // fetch(`${backendUrl}/files`)
   //     .then((res) => res.json())
   //     .then((data) => setRecordings(data));
   // }, []);
@@ -28,7 +31,7 @@ const RecordingsPage = () => {
     setSelectedRecording(uuid);
     setLoading(true);
 
-    const res = await fetch(`http://localhost:3000/file/${uuid}`);
+    const res = await fetch(`${backendUrl}/file/${uuid}`);
     const data = await res.json();
     setCode(data.script);
     setParameters(data.parameters || {});
@@ -38,7 +41,7 @@ const RecordingsPage = () => {
   const handleReplay = async () => {
     setIsReplaying(true);
 
-    const response = await fetch("http://localhost:3000/replay", {
+    const response = await fetch(`${backendUrl}/replay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -48,8 +51,9 @@ const RecordingsPage = () => {
     });
 
     if (response.ok) {
-      document.getElementById("vnc-viewer").src =
-        "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
+      document.getElementById(
+        "vnc-viewer"
+      ).src = `${VNC_Url}/vnc.html?autoconnect=true&resize=remote`;
     }
   };
 

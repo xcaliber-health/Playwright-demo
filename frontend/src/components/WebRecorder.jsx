@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Play, StopCircle } from "lucide-react";
 import TestRunner from "./RecordingsPage";
 
-const backendUrl = "http://localhost:3000";
+const VNC_Url = import.meta.env.VNC_URL;
 
 function WebRecorder({ setActiveTab }) {
   const [url, setUrl] = useState("https://www.github.com/");
@@ -12,8 +12,7 @@ function WebRecorder({ setActiveTab }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const vncUrl =
-    "http://localhost:8080/vnc.html?autoconnect=true&resize=remote";
+  const vncUrl = `${VNC_Url}/vnc.html?autoconnect=true&resize=remote`;
 
   const startRecording = async () => {
     if (!url.trim()) {
