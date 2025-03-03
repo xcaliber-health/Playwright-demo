@@ -6,6 +6,7 @@ const TestRunner = ({ uuid }) => {
   const [parameters, setParameters] = useState({});
   const [parameterValues, setParameterValues] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isReplaying, setIsReplaying] = useState(false);
   const editorRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -41,6 +42,8 @@ const TestRunner = ({ uuid }) => {
   };
 
   const handleReplay = async () => {
+    setIsReplaying(true); // Show full-screen iframe
+
     const response = await fetch("http://localhost:3000/replay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -48,158 +51,153 @@ const TestRunner = ({ uuid }) => {
     });
 
     if (response.ok) {
-      document.getElementById("vnc-viewer").src =
-        "http://localhost:8080/vnc.html";
+      const vncViewer = document.getElementById("vnc-viewer");
+      if (vncViewer) {
+        vncViewer.src = "http://localhost:8080/vnc.html";
+      }
     }
   };
 
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver(() => {
-      if (editorRef.current) {
-        editorRef.current.layout();
-      }
-    });
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: "25px",
-        padding: "20px",
-        maxWidth: "1200px",
-        margin: "auto",
-      }}
-    >
-      <div
-        style={{
-          width: "40%",
-          background: "#1a1a1a",
-          padding: "16px",
-          borderRadius: "8px",
-          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-          color: "white",
-        }}
-      >
-        <h3
-          style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "10px" }}
+    <div style={{ padding: "20px", maxWidth: "1200px", margin: "auto" }}>
+      {isReplaying ? (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "black",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
         >
-          Parameters
-        </h3>
-
-        {Object.entries(parameters).map(([key]) => (
-          <div
-            key={key}
+          <iframe
+            id="vnc-viewer"
+            title="VNC Viewer"
+            width="100%"
+            height="100%"
+            style={{ border: "none" }}
+          />
+          <button
+            onClick={() => setIsReplaying(false)}
             style={{
-              display: "flex",
-              flexDirection: "column",
-              marginBottom: "10px",
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              padding: "10px 20px",
+              background: "#ff4444",
+              border: "none",
+              borderRadius: "6px",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "14px",
             }}
           >
-            <label
+            Close Replay
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "25px",
+          }}
+        >
+          <div
+            style={{
+              width: "40%",
+              background: "#1a1a1a",
+              padding: "16px",
+              borderRadius: "8px",
+              color: "white",
+            }}
+          >
+            <h3>Parameters</h3>
+            {Object.entries(parameters).map(([key]) => (
+              <div key={key} style={{ marginBottom: "10px" }}>
+                <label style={{ color: "#b3b3b3" }}>{key}:</label>
+                <input
+                  type="text"
+                  value={parameterValues[key] || ""}
+                  onChange={(e) => handleParameterChange(key, e.target.value)}
+                  style={{
+                    padding: "8px",
+                    borderRadius: "4px",
+                    border: "1px solid #444",
+                    background: "#2a2a2a",
+                    color: "white",
+                    outline: "none",
+                    width: "96%",
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              onClick={handleReplay}
               style={{
-                marginBottom: "4px",
+                width: "100%",
+                padding: "10px",
+                background: "#007bff",
+                border: "none",
+                borderRadius: "6px",
+                color: "white",
+                cursor: "pointer",
                 fontSize: "14px",
-                color: "#b3b3b3",
               }}
             >
-              {key}:
-            </label>
-            <input
-              type="text"
-              value={parameterValues[key] || ""}
-              onChange={(e) => handleParameterChange(key, e.target.value)}
-              style={{
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #444",
-                background: "#2a2a2a",
-                color: "white",
-                outline: "none",
-              }}
-            />
+              Replay Test
+            </button>
           </div>
-        ))}
 
-        <button
-          onClick={handleReplay}
-          style={{
-            marginTop: "10px",
-            width: "100%",
-            padding: "10px 20px",
-            background: "#007bff",
-            border: "none",
-            borderRadius: "6px",
-            color: "white",
-            cursor: "pointer",
-            fontSize: "14px",
-            transition: "background-color 0.2s ease-in-out",
-          }}
-          onMouseOver={(e) => (e.target.style.background = "#0056b3")}
-          onMouseOut={(e) => (e.target.style.background = "#007bff")}
-        >
-          Replay Test
-        </button>
-      </div>
-
-      <div
-        ref={containerRef}
-        style={{
-          width: "55%",
-          background: "#1a1a1a",
-          padding: "16px",
-          borderRadius: "8px",
-          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-          color: "white",
-        }}
-      >
-        <h3
-          style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "10px" }}
-        >
-          Code Editor
-        </h3>
-
-        {loading ? (
-          <p style={{ color: "#b3b3b3" }}>Loading code...</p>
-        ) : (
-          <Editor
-            height="400px"
-            defaultLanguage="javascript"
-            theme="vs-dark"
-            value={code}
-            onChange={(newCode) => setCode(newCode)}
-            onMount={(editor) => (editorRef.current = editor)}
-          />
-        )}
-
-        <button
-          onClick={handleSave}
-          style={{
-            marginTop: "16px",
-            width: "100%",
-            padding: "10px 20px",
-            background: "#007bff",
-            border: "none",
-            borderRadius: "6px",
-            color: "white",
-            cursor: "pointer",
-            fontSize: "14px",
-            transition: "background-color 0.2s ease-in-out",
-          }}
-          onMouseOver={(e) => (e.target.style.background = "#0056b3")}
-          onMouseOut={(e) => (e.target.style.background = "#007bff")}
-        >
-          Save Code
-        </button>
-      </div>
+          <div
+            ref={containerRef}
+            style={{
+              width: "55%",
+              background: "#1a1a1a",
+              padding: "16px",
+              borderRadius: "8px",
+              color: "white",
+            }}
+          >
+            <h3>Code Editor</h3>
+            {loading ? (
+              <p style={{ color: "#b3b3b3" }}>Loading code...</p>
+            ) : (
+              <Editor
+                height="400px"
+                defaultLanguage="javascript"
+                theme="vs-dark"
+                value={code}
+                onChange={(newCode) => setCode(newCode)}
+                onMount={(editor) => (editorRef.current = editor)}
+              />
+            )}
+            <button
+              onClick={handleSave}
+              style={{
+                marginTop: "16px",
+                width: "100%",
+                padding: "10px 20px",
+                background: "#007bff",
+                border: "none",
+                borderRadius: "6px",
+                color: "white",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Save Code
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
