@@ -5,6 +5,7 @@ const cors = require("cors");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const { refactorScript } = require("./utils");
+const path = require("path");
 
 const app = express();
 const PORT = 3000;
@@ -77,40 +78,6 @@ function startServices(callback) {
     });
   });
 }
-// function startX11vnc(callback, retries = 3) {
-//   exec(
-//     "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
-//     (error) => {
-//       if (error) {
-//         console.error("Error starting x11vnc:", error);
-
-//         if (retries > 0) {
-//           console.log(`Retrying x11vnc (${retries} attempts left)...`);
-//           setTimeout(() => startX11vnc(callback, retries - 1), 2000);
-//         } else {
-//           return callback(error);
-//         }
-//       } else {
-//         console.log("x11vnc running on port 5900");
-
-//         exec(
-//           `novnc_proxy --vnc localhost:5900 --listen ${VNC_PORT} --quality 9 --enable-webp &`,
-//           (error) => {
-//             if (error) {
-//               console.error("Error starting noVNC:", error);
-//               return callback(error);
-//             } else {
-//               console.log(
-//                 `noVNC available at http://localhost:${VNC_PORT}/vnc.html`
-//               );
-//               callback(null);
-//             }
-//           }
-//         );
-//       }
-//     }
-//   );
-// }
 
 function stopServices(callback) {
   exec("killall Xvfb x11vnc novnc_proxy", (error) => {
@@ -187,7 +154,7 @@ app.post("/start", (req, res) => {
 
   playwrightProcess = spawn(
     "npx",
-    ["playwright", "codegen", "--no-ui", "--output", scriptPath, targetUrl],
+    ["playwright", "codegen", "--output", scriptPath, targetUrl],
     {
       env: { ...process.env, DISPLAY: ":99" },
       detached: true,
@@ -343,6 +310,117 @@ app.get("/file/:uuid", (req, res) => {
     script: scriptContent,
     parameters: parameters,
   });
+});
+
+app.post("/agent/operations", (req, res) => {
+  const prompt = req.body.prompt;
+  const title = req.body.title;
+  const id = uuidv4();
+  const agentSessionPath = path.join(
+    __dirname,
+    "app",
+    "agent",
+    `${id}-agent.json`
+  );
+
+  const dirPath = path.dirname(agentSessionPath);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+  fs.writeFileSync(
+    agentSessionPath,
+    JSON.stringify({
+      id: id,
+      title: title,
+      prompt: prompt,
+    }),
+    { encoding: "utf8" }
+  );
+
+  res.json({ id: id, title: title, prompt: prompt });
+});
+
+app.patch("/agent/operations/:id", (req, res) => {
+  const { id } = req.params;
+  const prompt = req.body.prompt;
+  const title = req.body.title;
+
+  console.log("id", id);
+  console.log("prompt", prompt);
+  console.log("title", title);
+
+  const agentSessionPath = path.join(
+    __dirname,
+    "app",
+    "agent",
+    `${id}-agent.json`
+  );
+  if (!fs.existsSync(agentSessionPath)) {
+    return res.status(404).json({ message: "Agent session not found!" });
+  }
+
+  fs.writeFileSync(
+    agentSessionPath,
+    JSON.stringify({ id: id, title: title, prompt: prompt }),
+    { encoding: "utf8" }
+  );
+  res.json({
+    message: "Agent session updated successfully!",
+    id: id,
+    title: title,
+    prompt: prompt,
+  });
+});
+
+app.get("/agent/operations/:id", (req, res) => {
+  const { id } = req.params;
+  const agentSessionPath = path.join(
+    __dirname,
+    "app",
+    "agent",
+    `${id}-agent.json`
+  );
+  if (!fs.existsSync(agentSessionPath)) {
+    return res.status(404).json({ message: "Agent session not found!" });
+  }
+
+  const agentSessionContent = fs.readFileSync(agentSessionPath, "utf-8");
+  const agentSession = JSON.parse(agentSessionContent);
+
+  res.json(agentSession);
+});
+
+//get all agent sessions along with details
+app.get("/agent/operations", (req, res) => {
+  const agentSessionPath = path.join(__dirname, "app", "agent");
+
+  if (!fs.existsSync(agentSessionPath)) {
+    return res
+      .status(404)
+      .json({ message: "Agent sessions directory not found!" });
+  }
+
+  const agentSessions = fs.readdirSync(agentSessionPath);
+
+  const agentSessionDetails = agentSessions
+    .map((session) => {
+      const agentSessionId = session.replace("-agent.json", "");
+      console.log("agentSessionId:", agentSessionId);
+
+      const filePath = path.join(agentSessionPath, session);
+
+      // Check if the agent session file exists
+      if (fs.existsSync(filePath)) {
+        const agentSessionContent = fs.readFileSync(filePath, "utf-8");
+        return JSON.parse(agentSessionContent);
+      } else {
+        return null; // Handle the case where the file does not exist
+      }
+    })
+    .filter((detail) => detail !== null); // Remove any null entries from the array
+
+  // Send the collected agent session details
+  res.json(agentSessionDetails);
 });
 
 app.post("/save-file/:uuid", (req, res) => {
