@@ -25,6 +25,6 @@ This template provides a minimal setup to get React working in Vite with HMR and
 ## Environment Variables 
 
 ```
-Base_URL=http://localhost:3000 // Replace localhost with url of RPA runner
-VNC_URL=http://localhost:8080 // Replace localhost with url of RPA runner 
+VITE_BASE_URL=http://localhost:3000 // Replace localhost with url of RPA runner
+VITE_VNC_URL=http://localhost:8080 // Replace localhost with url of RPA runner 
 ```
