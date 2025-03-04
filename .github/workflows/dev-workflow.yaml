@@ -1,0 +1,29 @@
+name: Build and push DEV docker image
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and tag DEV docker image
+        run: docker build -t ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/playwright-backend:dev-${{ github.sha }} .
+
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.PACKAGE_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Publish DEV docker image to GPR
+        run: docker push ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/playwright-backend:dev-${{ github.sha }}
