@@ -3,12 +3,13 @@ import WebRecorder from "./WebRecorder";
 import EhrOperator from "./EhrOperator";
 import RecordingsPage from "./RecordingsPage";
 
+
 function TabsPage() {
   const [activeTab, setActiveTab] = useState("Agent");
 
   return (
-    <div className="p-8 w-full bg-[#0b0f19]">
-      <div className="flex justify-start border-b bg-[#0b0f19] w-full">
+    <div className="p-8 w-full bg-[#0c111d] ">
+      <div className="flex justify-start border-b  bg-[#161b26] w-full rounded-md">
         {["Agent", "Recorder", "Replays"].map((tab) => (
           <button
             key={tab}
@@ -26,8 +27,10 @@ function TabsPage() {
       </div>
 
       <div className="mt-4 w-full rounded-lg">
-        {activeTab === "Agent" && <EhrOperator  />}
-        {activeTab === "Recorder" && <WebRecorder setActiveTab={setActiveTab} />}
+        {activeTab === "Agent" && <EhrOperator />}
+        {activeTab === "Recorder" && (
+          <WebRecorder setActiveTab={setActiveTab} />
+        )}
         {activeTab === "Replays" && <RecordingsPage />}
       </div>
     </div>

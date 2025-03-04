@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Play, StopCircle } from "lucide-react";
+import { StopCircle } from "lucide-react";
 import TestRunner from "./RecordingsPage";
 
 const VNC_Url = import.meta.env.VITE_VNC_URL;
 const backendUrl = import.meta.env.VITE_BASE_URL;
 
 function WebRecorder({ setActiveTab }) {
-  const [url, setUrl] = useState("https://www.github.com/");
+  const [url, setUrl] = useState("");
+  const [operation, setOperation] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingUuid, setRecordingUuid] = useState(null);
   const [showTestRunner, setShowTestRunner] = useState(false);
@@ -47,7 +48,7 @@ function WebRecorder({ setActiveTab }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ uuid: recordingUuid }),
+        body: JSON.stringify({ uuid: recordingUuid, title: operation }),
       });
       const data = await response.json();
       alert(data.message);
@@ -59,46 +60,70 @@ function WebRecorder({ setActiveTab }) {
     }
     setIsProcessing(false);
   };
-
+  console.log(
+    "first",
+    JSON.stringify({ uuid: recordingUuid, title: operation })
+  );
   return (
-    <div className="w-full flex h-screen p-5 font-sans gap-5">
+    <div className="w-full flex h-screen p-5 font-sans gap-5 bg-[#0c111d]">
+      {/* Sidebar */}
       <div
         className={`${
           isRecording && !isProcessing ? "w-16" : "w-1/4"
-        } bg-gray-100 p-5 rounded-lg shadow-md transition-all duration-300`}
+        } p-5 rounded-lg shadow-md transition-all duration-300 bg-[#161b26] border border-[#333741]`}
       >
         {!isRecording || isProcessing ? (
           <>
-            <h2 className="text-xl font-bold mb-4">Web Recorder</h2>
+            <h2 className="text-xl font-bold mb-4 text-[#e5e7eb]">
+              Web Recorder
+            </h2>
+
+            {/* Operation Name */}
+            <label className="block text-[#e5e7eb] font-semibold mb-2">
+              Operation Name
+            </label>
+            <input
+              type="text"
+              value={operation}
+              onChange={(e) => setOperation(e.target.value)}
+              placeholder="Enter operation name"
+              className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
+            />
+
+            {/* Target URL */}
+            <label className="block text-[#e5e7eb] font-semibold mb-2">
+              Target URL
+            </label>
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Enter website URL"
-              className="w-full p-3 text-lg border border-gray-300 rounded mb-4"
+              className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
             />
+
             <div className="flex gap-4">
               <button
                 onClick={startRecording}
                 disabled={isRecording && !isProcessing}
                 className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
                   isRecording && !isProcessing
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
+                    ? "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
+                    : "bg-[#2563eb] hover:bg-[#1e40af]"
                 }`}
               >
-                {isRecording ? "Recording..." : "Start Recording"}
+                {isRecording ? "Recording..." : "Start"}
               </button>
               <button
                 onClick={stopRecording}
                 disabled={!isRecording}
                 className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
                   isRecording
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-gray-400 cursor-not-allowed"
+                    ? "bg-[#3b82f6] hover:bg-[#2563eb]"
+                    : "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
                 }`}
               >
-                Stop Recording
+                Stop
               </button>
             </div>
           </>
@@ -108,38 +133,41 @@ function WebRecorder({ setActiveTab }) {
               onClick={stopRecording}
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
-              className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full relative"
+              className="bg-[#3b82f6] hover:bg-[#2563eb] text-white p-3 rounded-full relative"
             >
               <StopCircle size={24} />
             </button>
             {showTooltip && (
               <div className="absolute top-10 bg-black text-white text-xs rounded px-2 py-1">
-                Stop Recording
+                Stop
               </div>
             )}
           </div>
         )}
       </div>
 
+      {/* Main Panel */}
       <div
         className={`${
           isRecording ? "w-full" : "w-3/4"
-        } flex-1 bg-white p-5 rounded-lg shadow-md transition-all duration-300`}
+        } flex-1 p-5 rounded-lg shadow-md transition-all duration-300 bg-[#161b26] border border-[#333741]`}
       >
         {isRecording ? (
           <>
-            <h3 className="text-lg font-semibold mb-4">VNC Browser View</h3>
+            <h3 className="text-lg font-semibold mb-4 text-[#e5e7eb]">
+              VNC Browser View
+            </h3>
             <iframe
               src={vncUrl}
-              className="w-full h-[85vh] border border-gray-300 rounded"
+              className="w-full h-[85vh] border border-[#333741] rounded"
               title="VNC Viewer"
             />
           </>
         ) : showTestRunner ? (
           <TestRunner uuid={recordingUuid} />
         ) : (
-          <p className="text-gray-500 text-center text-lg">
-            Start recording to see the VNC browser.
+          <p className="text-[#9ca3af] text-center text-lg">
+            Start recording to view the browser.
           </p>
         )}
       </div>

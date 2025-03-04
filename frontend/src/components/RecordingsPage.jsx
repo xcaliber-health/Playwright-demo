@@ -1,53 +1,46 @@
-import React, { useState, useEffect, useRef } from "react";
 import { Editor } from "@monaco-editor/react";
 import { Play } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 const VNC_Url = import.meta.env.VITE_VNC_URL;
 const backendUrl = import.meta.env.VITE_BASE_URL;
 
-const RecordingsPage = () => {
-  const [recordings, setRecordings] = useState();
-  const [agentScripts, setAgentScripts] = useState();
+const ChatRecordingsPage = () => {
+  const [recordings, setRecordings] = useState([]);
+  const [agentScripts, setAgentScripts] = useState([]);
   const [selectedRecording, setSelectedRecording] = useState(null);
   const [code, setCode] = useState("// Loading...");
   const [parameters, setParameters] = useState({});
   const [parameterValues, setParameterValues] = useState({});
-  const [loading, setLoading] = useState(true);
   const [isReplaying, setIsReplaying] = useState(false);
-  const editorRef = useRef(null);
+  const [taskDescription, setTaskDescription] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
 
   useEffect(() => {
     fetch(`${backendUrl}/scripts`)
       .then((res) => res.json())
       .then((data) => {
-        const filteredRecordings = data?.scriptDetailList?.filter(
-          (script) => script.tag === "script"
+        setRecordings(
+          data?.scriptDetailList?.filter((script) => script.tag === "script")
         );
-        setRecordings(filteredRecordings);
-
-        const filteredScripts = data?.scriptDetailList?.filter(
-          (script) => script.tag === "agent"
+        setAgentScripts(
+          data?.scriptDetailList?.filter((script) => script.tag === "agent")
         );
-
-        setAgentScripts(filteredScripts);
       });
   }, []);
 
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);
-    setLoading(true);
-
+    alert(`Recording with uuid:${uuid} selected`);
     const res = await fetch(`${backendUrl}/file/${uuid}`);
     const data = await res.json();
     setCode(data.script);
     setParameters(data.parameters || {});
-    setLoading(false);
   };
 
   const handleReplay = async () => {
     setIsReplaying(true);
-
-    const response = await fetch(`${backendUrl}/replay`, {
+    await fetch(`${backendUrl}/replay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -55,141 +48,150 @@ const RecordingsPage = () => {
         parameters: parameterValues,
       }),
     });
+  };
 
-    if (response.ok) {
-      document.getElementById(
-        "vnc-viewer"
-      ).src = `${VNC_Url}/vnc.html?autoconnect=true&resize=remote`;
-    }
+  const handlePromptExecution = async () => {
+    const prompt = `Task: ${taskDescription}\nAdditional Info: ${additionalInfo}`;
+
+    await fetch(`${backendUrl}/process-prompt`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uuid: selectedRecording,
+        prompt: prompt,
+      }),
+    });
   };
 
   return (
-    <div className="w-full h-screen flex gap-6 p-5">
-      <div className="w-full flex flex-col gap-4">
-        <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
-          <h3>Recordings</h3>
-          <ul>
-            {recordings?.map((rec) => (
-              <li
-                key={rec?.uuid}
-                className="flex justify-between items-center text-white bg-gray-900 border-b border-gray-700 p-2 m-2"
-              >
-                <span>{rec?.uuid}</span>
-                <button onClick={() => loadRecording(rec?.uuid)}>
-                  <Play
-                    size={20}
-                    className="text-blue-500 hover:text-blue-300"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+    <div className="flex h-screen w-full p-4 bg-[#0c111d] text-white">
+      {/* Left Sidebar */}
+      <div className="w-1/3 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg self-start py-2 mr-4">
+        <div className="p-4  rounded-lg mb-4">
+          <h2 className="text-lg font-semibold">Task Description</h2>
+          <textarea
+            className="w-full bg-[#0c111d] text-white p-2 pb-10 mt-2 rounded-md border border-[#333741] focus:outline-none"
+            placeholder="Describe what you want the agent to do"
+            onChange={(e) => setTaskDescription(e.target.value)}
+          ></textarea>
         </div>
-        <div className="w-1/3 bg-gray-900 p-4 rounded-md text-white self-start">
-          <h3>Agent Scripts</h3>
-          <ul>
-            {agentScripts?.map((script) => (
-              <li
-                key={script?.id}
-                className="flex justify-between items-center text-white bg-gray-900 border-b border-gray-700 p-2 m-2"
-              >
-                <span>{script?.id}</span>
-                <button
-                // onClick={() =>
-                //   loadRecording("5c5787bd-c96e-4224-9e30-69ad30706153")
-                // }
-                >
-                  <Play
-                    size={20}
-                    className="text-blue-500 hover:text-blue-300"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+
+        <div className="p-4 rounded-lg mb-4">
+          <h2 className="text-lg font-semibold">Additional Information</h2>
+          <textarea
+            className="w-full bg-[#0c111d] text-white p-2 pb-4 mt-2 rounded-lg border border-[#333741] focus:outline-none"
+            placeholder="Add any helpful context or instructions..."
+            onChange={(e) => setAdditionalInfo(e.target.value)}
+          ></textarea>
+        </div>
+
+        <div className="flex px-4 mb-2">
+          <button
+            className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#333741]"
+            onClick={handlePromptExecution}
+          >
+            Run Agent
+          </button>
         </div>
       </div>
 
-      {selectedRecording && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-lg z-50 p-6">
-          <div className="bg-gray-900/90 p-8 rounded-xl w-[1000px] text-white relative shadow-2xl">
-            <button
-              className="absolute top-3 right-3 text-white text-2xl"
-              onClick={() => setSelectedRecording(null)}
-            >
-              ✕
-            </button>
-            <h3 className="text-xl font-semibold mb-4">Test Execution</h3>
-
-            <div className="flex gap-6">
-              <div className="w-1/3">
-                <h4 className="text-lg font-semibold mb-2">Parameters</h4>
-                {Object.entries(parameters).map(([key, param]) => (
-                  <div key={key} className="mb-4">
-                    <label className="text-gray-300 font-bold">
-                      {param.name}
-                    </label>
-                    <small className="block text-gray-500 mb-1">
-                      {param.description}
-                    </small>
-                    <input
-                      type="text"
-                      value={parameterValues[key] || ""}
-                      onChange={(e) =>
-                        setParameterValues({
-                          ...parameterValues,
-                          [key]: e.target.value,
-                        })
-                      }
-                      className="p-2 rounded border border-gray-700 bg-gray-800 text-white w-full"
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={handleReplay}
-                  className="w-full p-3 bg-blue-500 hover:bg-blue-600 rounded-md text-white cursor-pointer mt-4"
-                >
-                  Execute Test
-                </button>
-              </div>
-
-              <div className="w-2/3 rounded-md overflow-hidden">
-                <h4 className="text-lg font-semibold mb-2">Code Editor</h4>
-                {loading ? (
-                  <p className="text-gray-400">Loading code...</p>
+      {/* Right Content Section */}
+      <div className="w-2/3 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
+        {!selectedRecording ? (
+          <div className="flex gap-4">
+            {/* Recordings List */}
+            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
+              <h3 className="mb-2 text-lg">Recordings</h3>
+              <ul>
+                {recordings?.length > 0 ? (
+                  recordings?.map((rec) => (
+                    <li
+                      key={rec?.uuid}
+                      className="flex justify-between p-2 cursor-pointer hover:bg-[#161b26e7] border border-[#333741] rounded-md"
+                      onClick={() => loadRecording(rec?.uuid)}
+                    >
+                      <span>{rec?.title || rec?.uuid}</span>
+                    </li>
+                  ))
                 ) : (
-                  <Editor
-                    height="350px"
-                    defaultLanguage="javascript"
-                    theme="vs-dark"
-                    value={code}
-                    onChange={(newCode) => setCode(newCode)}
-                    onMount={(editor) => (editorRef.current = editor)}
-                  />
+                  <div className="opacity-75">No recordings available</div>
                 )}
-              </div>
+              </ul>
+            </div>
+
+            {/* Agent Scripts List */}
+            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
+              <h3 className="mb-2 text-lg">Agent Scripts</h3>
+              <ul>
+                {agentScripts?.length > 0 ? (
+                  agentScripts?.map((script) => (
+                    <li
+                      key={script?.id}
+                      className="flex justify-between p-2 border border-[#333741] rounded-md"
+                    >
+                      <span>{script?.id}</span>
+                    </li>
+                  ))
+                ) : (
+                  <div className="opacity-75">No scripts available</div>
+                )}
+              </ul>
             </div>
           </div>
-        </div>
-      )}
+        ) : !isReplaying ? (
+          <div className="flex gap-6">
+            {/* Parameters Section */}
+            <div className="w-1/3">
+              <h4 className="mb-2">Parameters</h4>
+              {Object.entries(parameters).map(([key, param]) => (
+                <div key={key} className="mb-4">
+                  <label>{param.name}</label>
+                  <input
+                    type="text"
+                    value={parameterValues[key] || ""}
+                    onChange={(e) =>
+                      setParameterValues({
+                        ...parameterValues,
+                        [key]: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border border-[#333741] bg-gray-800 text-white rounded"
+                  />
+                </div>
+              ))}
+              <button
+                onClick={handleReplay}
+                className="w-full p-3 bg-blue-500 border border-[#333741] mt-4 rounded"
+              >
+                Execute Test
+              </button>
+            </div>
 
-      {isReplaying && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black z-50">
-          <iframe
-            id="vnc-viewer"
-            className="w-full h-full border-none"
-            title="VNC Viewer"
-          ></iframe>
-          <button
-            onClick={() => setIsReplaying(false)}
-            className="absolute top-2 right-2 px-4 py-2 bg-red-500 rounded-md text-white cursor-pointer"
-          >
-            Close Replay
-          </button>
-        </div>
-      )}
+            {/* Code Editor Section */}
+            <div className="w-2/3 border border-[#333741] rounded-lg p-4">
+              <h4 className="mb-2">Code Editor</h4>
+              <Editor
+                height="350px"
+                defaultLanguage="javascript"
+                theme="vs-dark"
+                value={code}
+                onChange={setCode}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 w-full h-full bg-black border border-[#333741] rounded-lg">
+            <iframe
+              id="vnc-viewer"
+              className="w-full h-full border-none"
+              title="VNC Viewer"
+              src={`${VNC_Url}/vnc.html?autoconnect=true&resize=remote`}
+            ></iframe>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default RecordingsPage;
+export default ChatRecordingsPage;

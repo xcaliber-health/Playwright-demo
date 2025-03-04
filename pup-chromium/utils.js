@@ -5,8 +5,6 @@ const {
 } = require("@google/generative-ai");
 require("dotenv").config();
 
-console.log("env api key:", process.env.GEMINI_API_KEY);
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
@@ -79,4 +77,105 @@ async function refactorScript(script) {
   return result.response.text();
 }
 
-module.exports = { refactorScript };
+const replayModel = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash",
+  systemInstruction:
+    "You are an intelligent assistant for processing and modifying automation scripts or file operations based on user instructions. Your primary responsibilities include:\n\n" +
+    '1. **Fetching a Script:** If the user asks for script details, parameters, or wants to modify a script, return `{ "action": "fetch-file" }` first.\n' +
+    '2. **Modifying and Saving a Script:** If the user provides changes to a script after fetching it, return `{ "action": "save-file", "script": "<modified-script>", "parameters": <updated-parameters> }`.\n' +
+    "3. **Executing a Script:** If the user explicitly requests execution (e.g., 'run', 'execute', 'start') **and specifies parameters**, return `{ \"action\": \"execute-script\", \"parameters\": <extracted-parameters> }`.\n" +
+    '4. **Handling Execution Without Parameters:** If the user wants to run a script but hasn\'t provided parameters, return `{ "action": "fetch-file" }` first.\n' +
+    '5. **Handling Parameter Requests:** If the user asks for the list of parameters or input values, return `{ "action": "fetch-file" }` to allow reviewing before execution.\n' +
+    "6. **Ensuring Proper Execution Flow:**\n" +
+    "   - If parameters are provided, **execute immediately**.\n" +
+    "   - If no parameters are provided, **fetch the script first** before proceeding to execution.\n" +
+    "### **Response Format:**\n" +
+    "- Return a JSON object with `action`, `script` (if applicable), and `parameters`.\n" +
+    '- **For fetching a script:** `{ "action": "fetch-file" }`\n' +
+    '- **For modifying a script:** `{ "action": "save-file", "script": "<modified-script>", "parameters": <updated-parameters> }`\n' +
+    '- **For executing with parameters:** `{ "action": "execute-script", "parameters": { "email": "user@example.com" } }`\n\n' +
+    "### **Example Responses:**\n" +
+    "#### 1️⃣ User Requests Parameters or Script:\n" +
+    '   `{ "action": "fetch-file" }`\n' +
+    "#### 2️⃣ User Modifies and Saves the Script:\n" +
+    '   `{ "action": "save-file", "script": "<modified-script>", "parameters": { "email": "string" } }`\n' +
+    "#### 3️⃣ User Specifies Parameters and Requests Execution:\n" +
+    '   `{ "action": "execute-script", "parameters": { "email": "user@example.com" } }`\n' +
+    "#### 4️⃣ User Requests Execution Without Providing Parameters:\n" +
+    '   `{ "action": "fetch-file" }`',
+});
+
+async function processPrompt(prompt, uuid) {
+  try {
+    const geminiResponse = await replayModel.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 1,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json",
+      },
+    });
+
+    const responseData = await geminiResponse.response.text();
+    const content = JSON.parse(responseData);
+
+    console.log("Gemini AI Response:", content);
+
+    if (!content.action) {
+      throw new Error("Missing action in Gemini AI response");
+    }
+
+    let endpoint = "";
+    let payload = { prompt, uuid };
+    const BASE_URL = "http://localhost:3000";
+    let response;
+
+    switch (content.action) {
+      case "save-file":
+        endpoint = `${BASE_URL}/save-file/${uuid}`;
+        payload.code = content.script || "";
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        break;
+
+      case "fetch-file":
+        endpoint = `${BASE_URL}/file/${uuid}`;
+        response = await fetch(endpoint);
+        return await response.json();
+
+      case "execute-script":
+        endpoint = `${BASE_URL}/replay`;
+        payload.parameters =
+          content.parameters && Object.keys(content.parameters).length > 0
+            ? content.parameters
+            : {};
+        payload.uuid = uuid;
+        console.log("Executing script with payload:", payload); // Debugging
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        break;
+
+      default:
+        throw new Error("Unrecognized action from Gemini AI");
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error from ${endpoint}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error processing prompt:", error);
+    throw error;
+  }
+}
+
+module.exports = { refactorScript, processPrompt };

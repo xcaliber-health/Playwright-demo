@@ -4,7 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const { refactorScript } = require("./utils");
+const { refactorScript, processPrompt } = require("./utils");
 const path = require("path");
 
 const app = express();
@@ -170,7 +170,7 @@ app.post("/start", (req, res) => {
 });
 
 app.post("/stop", (req, res) => {
-  const { uuid } = req.body;
+  const { uuid, title } = req.body;
   if (!playwrightProcess) {
     return res.status(400).json({ message: "No recording in progress!" });
   }
@@ -179,16 +179,16 @@ app.post("/stop", (req, res) => {
     "pkill -f 'playwright codegen';pkill chromium; pkill Xvfb; pkill x11vnc",
     async () => {
       playwrightProcess = null;
-      exec(
-        "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
-        (error) => {
-          if (error) {
-            console.error("Error killing process on port 5900:", error);
-          } else {
-            console.log("Killed process using port 5900");
-          }
-        }
-      );
+      // exec(
+      //   "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
+      //   (error) => {
+      //     if (error) {
+      //       console.error("Error killing process on port 5900:", error);
+      //     } else {
+      //       console.log("Killed process using port 5900");
+      //     }
+      //   }
+      // );
 
       if (fs.existsSync(scriptPath)) {
         console.log("Recording saved to:", scriptPath);
@@ -202,6 +202,10 @@ app.post("/stop", (req, res) => {
 
           createNewFile(uuid, "json", JSON.stringify(response.parameters));
           console.log("Parameters saved to:", `/app/${uuid}.json`);
+
+          const textContent = title ? title : "";
+          createNewFile(uuid, "txt", textContent);
+          console.log("Title saved to:", `/app/${uuid}.txt`);
         } catch (error) {
           console.error("Error refactoring script:", error);
           res.status(500).json({ message: "Error refactoring script!" });
@@ -217,101 +221,6 @@ app.post("/stop", (req, res) => {
   );
 });
 
-app.post("/replay", async (req, res) => {
-  const { uuid, parameters } = req.body;
-
-  if (!uuid) {
-    return res.status(400).json({ message: "UUID is required!" });
-  }
-
-  const runTestPath = `/app/${uuid}.spec.ts`;
-  if (!fs.existsSync(runTestPath)) {
-    return res.status(404).json({ message: "Script file not found!" });
-  }
-
-  const runTest = require(runTestPath);
-
-  try {
-    // Start services before running the test
-    startServices(async (error) => {
-      if (error) {
-        return res.status(500).json({ message: "Error starting services!" });
-      }
-
-      const page = await startBrowser();
-
-      // Convert parameters map to an array of arguments
-      const args = Object.values(parameters);
-
-      console.log("args", args);
-
-      console.log("Running test with parameters:", args);
-      try {
-        await runTest(page, args);
-        console.log("Test completed successfully!");
-        res.json({
-          message: "Replay completed successfully!",
-          status: "success",
-        });
-      } catch (testError) {
-        console.error("Error during test execution:", testError);
-        res.status(500).json({
-          message: "Error during test execution!",
-          error: testError.message,
-        });
-      }
-    });
-  } catch (error) {
-    console.error("Error during replay:", error);
-    res.status(500).json({
-      message: "Error during replay execution!",
-      error: error.message,
-    });
-  }
-
-  // Stop services after running the test
-  // stopServices((error) => {
-  //   if (error) {
-  //     console.error("Error stopping services:", error);
-  //   }
-  // });
-});
-
-app.get("/file/:uuid", (req, res) => {
-  const { uuid } = req.params;
-  const scriptPath = `/app/${uuid}.spec.ts`;
-  const parametersPath = `/app/${uuid}.json`;
-
-  if (!fs.existsSync(scriptPath)) {
-    return res.status(404).json({ message: "Script file not found!" });
-  }
-
-  let scriptContent = "";
-  let parameters = null;
-
-  try {
-    scriptContent = fs.readFileSync(scriptPath, "utf-8");
-  } catch (error) {
-    console.error("Error reading script file:", error);
-    return res.status(500).json({ message: "Error reading script file" });
-  }
-
-  if (fs.existsSync(parametersPath)) {
-    try {
-      const paramContent = fs.readFileSync(parametersPath, "utf-8");
-      parameters = JSON.parse(paramContent);
-    } catch (error) {
-      console.error("Error reading parameters file:", error);
-      parameters = null;
-    }
-  }
-
-  res.json({
-    script: scriptContent,
-    parameters: parameters,
-  });
-});
-
 app.get("/scripts", (req, res) => {
   const files = fs.readdirSync("/app");
   const scriptDetails = files
@@ -320,9 +229,11 @@ app.get("/scripts", (req, res) => {
       const uuid = scriptFile.replace(".spec.ts", ""); // Extract UUID
       const scriptPath = path.join("/app/", scriptFile);
       const parametersPath = path.join("/app/", `${uuid}.json`);
+      const textFilePath = path.join("/app/", `${uuid}.txt`);
 
       let scriptContent = "";
       let parameters = "";
+      let title = "";
 
       try {
         scriptContent = fs.readFileSync(scriptPath, "utf-8");
@@ -340,12 +251,20 @@ app.get("/scripts", (req, res) => {
           );
         }
       }
+      if (fs.existsSync(textFilePath)) {
+        try {
+          title = fs.readFileSync(textFilePath, "utf-8");
+        } catch (error) {
+          console.error(`Error reading text file ${textFilePath}:`, error);
+        }
+      }
 
       return {
         uuid: uuid,
         tag: "script",
         script: scriptContent,
         parameters: parameters,
+        title: title ? title : "",
       };
     });
 
@@ -355,7 +274,7 @@ app.get("/scripts", (req, res) => {
     const agentSessions = fs.readdirSync(agentSessionPath);
 
     const agentSessionDetails = agentSessions
-      .map(session => {
+      .map((session) => {
         const agentSessionId = session.replace("-agent.json", "");
         console.log("agentSessionId:", agentSessionId);
 
@@ -370,7 +289,7 @@ app.get("/scripts", (req, res) => {
           return null;
         }
       })
-      .filter(detail => detail !== null);
+      .filter((detail) => detail !== null);
 
     scriptDetails.push(...agentSessionDetails);
   }
@@ -488,6 +407,100 @@ app.get("/agent/operations", (req, res) => {
   res.json(agentSessionDetails);
 });
 
+app.post("/replay", async (req, res) => {
+  const { uuid, parameters } = req.body;
+  console.log(parameters);
+  if (!uuid) {
+    return res.status(400).json({ message: "UUID is required!" });
+  }
+
+  const runTestPath = `/app/${uuid}.spec.ts`;
+  if (!fs.existsSync(runTestPath)) {
+    return res.status(404).json({ message: "Script file not found!" });
+  }
+
+  const runTest = require(runTestPath);
+
+  try {
+    // Start services before running the test
+    startServices(async (error) => {
+      if (error) {
+        return res.status(500).json({ message: "Error starting services!" });
+      }
+
+      const page = await startBrowser();
+
+      const args = parameters ? Object.values(parameters) : [];
+
+      console.log("args", args);
+
+      console.log("Running test with parameters:", args);
+      try {
+        await runTest(page, args);
+        console.log("Test completed successfully!");
+        res.json({
+          message: "Replay completed successfully!",
+          status: "success",
+        });
+      } catch (testError) {
+        console.error("Error during test execution:", testError);
+        res.status(500).json({
+          message: "Error during test execution!",
+          error: testError.message,
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error during replay:", error);
+    res.status(500).json({
+      message: "Error during replay execution!",
+      error: error.message,
+    });
+  }
+
+  // Stop services after running the test
+  // stopServices((error) => {
+  //   if (error) {
+  //     console.error("Error stopping services:", error);
+  //   }
+  // });
+});
+
+app.get("/file/:uuid", (req, res) => {
+  const { uuid } = req.params;
+  const scriptPath = `/app/${uuid}.spec.ts`;
+  const parametersPath = `/app/${uuid}.json`;
+
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(404).json({ message: "Script file not found!" });
+  }
+
+  let scriptContent = "";
+  let parameters = null;
+
+  try {
+    scriptContent = fs.readFileSync(scriptPath, "utf-8");
+  } catch (error) {
+    console.error("Error reading script file:", error);
+    return res.status(500).json({ message: "Error reading script file" });
+  }
+
+  if (fs.existsSync(parametersPath)) {
+    try {
+      const paramContent = fs.readFileSync(parametersPath, "utf-8");
+      parameters = JSON.parse(paramContent);
+    } catch (error) {
+      console.error("Error reading parameters file:", error);
+      parameters = null;
+    }
+  }
+
+  res.json({
+    script: scriptContent,
+    parameters: parameters,
+  });
+});
+
 app.post("/save-file/:uuid", (req, res) => {
   const { uuid } = req.params;
   const { code } = req.body;
@@ -508,11 +521,29 @@ app.post("/save-file/:uuid", (req, res) => {
   res.json({ message: "Code updated successfully!" });
 });
 
+app.post("/process-prompt", async (req, res) => {
+  try {
+    const { prompt, uuid } = req.body;
+
+    if (!prompt || !uuid) {
+      return res.status(400).json({ message: "Prompt and UUID are required!" });
+    }
+
+    const result = await processPrompt(prompt, uuid);
+    res.json(result);
+  } catch (error) {
+    console.error("Error processing prompt:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
 async function startBrowser() {
   if (browserInstance) {
     console.log("Using existing Chromium instance...");
     const context = await browserInstance.newContext({
-      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
+      viewport: { width: 1920, height: 1080 },
     });
 
     const page = await context.newPage();
