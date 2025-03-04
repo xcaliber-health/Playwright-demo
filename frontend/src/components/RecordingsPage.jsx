@@ -20,18 +20,18 @@ const RecordingsPage = () => {
     fetch(`${backendUrl}/scripts`)
       .then((res) => res.json())
       .then((data) => {
-        const filteredRecordings = data?.scriptDetailList.filter(
+        const filteredRecordings = data?.scriptDetailList?.filter(
           (script) => script.tag === "script"
         );
         setRecordings(filteredRecordings);
 
-        const filteredScripts = data?.scriptDetailList.filter(
+        const filteredScripts = data?.scriptDetailList?.filter(
           (script) => script.tag === "agent"
         );
 
         setAgentScripts(filteredScripts);
       });
-  }, [recordings, agentScripts]);
+  }, []);
 
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);

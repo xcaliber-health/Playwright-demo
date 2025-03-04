@@ -53,7 +53,7 @@ function WebRecorder({ setActiveTab }) {
       alert(data.message);
       setIsRecording(false);
       setShowTestRunner(true);
-      setActiveTab("Tab3");
+      setActiveTab("Replays");
     } catch (error) {
       console.error("Error stopping recording:", error);
     }

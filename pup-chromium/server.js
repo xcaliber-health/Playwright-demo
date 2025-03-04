@@ -375,7 +375,7 @@ app.get("/scripts", (req, res) => {
     scriptDetails.push(...agentSessionDetails);
   }
 
-  res.json({ scriptDeatilList: scriptDetails });
+  res.json({ scriptDetailList: scriptDetails });
 });
 
 app.post("/agent/operations", (req, res) => {
