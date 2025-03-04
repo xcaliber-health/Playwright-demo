@@ -110,7 +110,7 @@ const ChatRecordingsPage = () => {
                       className="flex justify-between p-2 cursor-pointer hover:bg-[#161b26e7] border border-[#333741] rounded-md"
                       onClick={() => loadRecording(rec?.uuid)}
                     >
-                      <span>{rec?.uuid}</span>
+                      <span>{rec?.title || rec?.uuid}</span>
                     </li>
                   ))
                 ) : (

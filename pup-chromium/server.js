@@ -170,7 +170,7 @@ app.post("/start", (req, res) => {
 });
 
 app.post("/stop", (req, res) => {
-  const { uuid } = req.body;
+  const { uuid, title } = req.body;
   if (!playwrightProcess) {
     return res.status(400).json({ message: "No recording in progress!" });
   }
@@ -179,16 +179,16 @@ app.post("/stop", (req, res) => {
     "pkill -f 'playwright codegen';pkill chromium; pkill Xvfb; pkill x11vnc",
     async () => {
       playwrightProcess = null;
-      exec(
-        "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
-        (error) => {
-          if (error) {
-            console.error("Error killing process on port 5900:", error);
-          } else {
-            console.log("Killed process using port 5900");
-          }
-        }
-      );
+      // exec(
+      //   "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
+      //   (error) => {
+      //     if (error) {
+      //       console.error("Error killing process on port 5900:", error);
+      //     } else {
+      //       console.log("Killed process using port 5900");
+      //     }
+      //   }
+      // );
 
       if (fs.existsSync(scriptPath)) {
         console.log("Recording saved to:", scriptPath);
@@ -202,6 +202,10 @@ app.post("/stop", (req, res) => {
 
           createNewFile(uuid, "json", JSON.stringify(response.parameters));
           console.log("Parameters saved to:", `/app/${uuid}.json`);
+
+          const textContent = title ? title : "";
+          createNewFile(uuid, "txt", textContent);
+          console.log("Title saved to:", `/app/${uuid}.txt`);
         } catch (error) {
           console.error("Error refactoring script:", error);
           res.status(500).json({ message: "Error refactoring script!" });
@@ -225,9 +229,11 @@ app.get("/scripts", (req, res) => {
       const uuid = scriptFile.replace(".spec.ts", ""); // Extract UUID
       const scriptPath = path.join("/app/", scriptFile);
       const parametersPath = path.join("/app/", `${uuid}.json`);
+      const textFilePath = path.join("/app/", `${uuid}.txt`);
 
       let scriptContent = "";
       let parameters = "";
+      let title = "";
 
       try {
         scriptContent = fs.readFileSync(scriptPath, "utf-8");
@@ -245,12 +251,20 @@ app.get("/scripts", (req, res) => {
           );
         }
       }
+      if (fs.existsSync(textFilePath)) {
+        try {
+          title = fs.readFileSync(textFilePath, "utf-8");
+        } catch (error) {
+          console.error(`Error reading text file ${textFilePath}:`, error);
+        }
+      }
 
       return {
         uuid: uuid,
         tag: "script",
         script: scriptContent,
         parameters: parameters,
+        title: title ? title : "",
       };
     });
 
