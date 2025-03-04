@@ -145,6 +145,7 @@ async function processPrompt(prompt, uuid) {
       case "execute-script":
         endpoint = `${BASE_URL}/replay`;
         payload.parameters = content.parameters || {};
+        payload.uuid = uuid;
         response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
