@@ -25,3 +25,9 @@
     ```bash
     docker-compose down
     ```
+
+## Environment Variables 
+
+```
+
+```
