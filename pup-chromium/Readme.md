@@ -25,3 +25,9 @@
     ```bash
     docker-compose down
     ```
+
+## Environment Variables 
+
+```
+GEMINI_API_KEY= // use Gemini key for now. Will replace with lite llm soon
+```
