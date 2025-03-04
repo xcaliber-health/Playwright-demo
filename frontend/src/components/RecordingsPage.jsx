@@ -32,6 +32,10 @@ const ChatRecordingsPage = () => {
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);
     alert(`Recording with uuid:${uuid} selected`);
+    const res = await fetch(`${backendUrl}/file/${uuid}`);
+    const data = await res.json();
+    setCode(data.script);
+    setParameters(data.parameters || {});
   };
 
   const handleReplay = async () => {
@@ -121,7 +125,10 @@ const ChatRecordingsPage = () => {
               <ul>
                 {agentScripts?.length > 0 ? (
                   agentScripts?.map((script) => (
-                    <li key={script?.id} className="flex justify-between p-2 border border-[#333741] rounded-md">
+                    <li
+                      key={script?.id}
+                      className="flex justify-between p-2 border border-[#333741] rounded-md"
+                    >
                       <span>{script?.id}</span>
                     </li>
                   ))
@@ -131,7 +138,7 @@ const ChatRecordingsPage = () => {
               </ul>
             </div>
           </div>
-        ) : (
+        ) : !isReplaying ? (
           <div className="flex gap-6">
             {/* Parameters Section */}
             <div className="w-1/3">
@@ -172,11 +179,8 @@ const ChatRecordingsPage = () => {
               />
             </div>
           </div>
-        )}
-
-        {/* VNC Viewer */}
-        {isReplaying && (
-          <div className="mt-4 w-full h-96 bg-black border border-[#333741] rounded-lg">
+        ) : (
+          <div className="mt-4 w-full h-full bg-black border border-[#333741] rounded-lg">
             <iframe
               id="vnc-viewer"
               className="w-full h-full border-none"
