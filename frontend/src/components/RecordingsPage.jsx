@@ -32,10 +32,6 @@ const ChatRecordingsPage = () => {
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);
     alert(`Recording with uuid:${uuid} selected`);
-    // const res = await fetch(`${backendUrl}/file/${uuid}`);
-    // const data = await res.json();
-    // setCode(data.script);
-    // setParameters(data.parameters || {});
   };
 
   const handleReplay = async () => {
@@ -65,26 +61,29 @@ const ChatRecordingsPage = () => {
 
   return (
     <div className="flex h-screen w-full p-4 bg-[#0c111d] text-white">
-      <div className="w-1/3 flex flex-col bg-[#161b26]  rounded-lg self-start py-2 mr-4">
-        <div className=" p-4 rounded-lg mb-4">
+      {/* Left Sidebar */}
+      <div className="w-1/3 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg self-start py-2 mr-4">
+        <div className="p-4  rounded-lg mb-4">
           <h2 className="text-lg font-semibold">Task Description</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-10 mt-2 rounded-md focus:outline-none"
+            className="w-full bg-[#0c111d] text-white p-2 pb-10 mt-2 rounded-md border border-[#333741] focus:outline-none"
             placeholder="Describe what you want the agent to do"
             onChange={(e) => setTaskDescription(e.target.value)}
           ></textarea>
         </div>
-        <div className="p-4 rounded-lg  mb-4">
+
+        <div className="p-4 rounded-lg mb-4">
           <h2 className="text-lg font-semibold">Additional Information</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-4 mt-2 rounded-lg focus:outline-none"
+            className="w-full bg-[#0c111d] text-white p-2 pb-4 mt-2 rounded-lg border border-[#333741] focus:outline-none"
             placeholder="Add any helpful context or instructions..."
             onChange={(e) => setAdditionalInfo(e.target.value)}
           ></textarea>
         </div>
+
         <div className="flex px-4 mb-2">
           <button
-            className="w-full bg-blue-600 px-4 py-2 rounded-lg"
+            className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#333741]"
             onClick={handlePromptExecution}
           >
             Run Agent
@@ -92,50 +91,49 @@ const ChatRecordingsPage = () => {
         </div>
       </div>
 
-      <div className="w-2/3 bg-[#161b26] p-4 rounded-lg shadow-lg">
+      {/* Right Content Section */}
+      <div className="w-2/3 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
         {!selectedRecording ? (
           <div className="flex gap-4">
-            <div className="w-1/2 bg-[#0c111d] p-4 rounded-md">
+            {/* Recordings List */}
+            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
               <h3 className="mb-2 text-lg">Recordings</h3>
               <ul>
                 {recordings?.length > 0 ? (
                   recordings?.map((rec) => (
                     <li
                       key={rec?.uuid}
-                      className="flex justify-between p-2 cursor-pointer hover:bg-[#161b26e7]"
+                      className="flex justify-between p-2 cursor-pointer hover:bg-[#161b26e7] border border-[#333741] rounded-md"
                       onClick={() => loadRecording(rec?.uuid)}
                     >
                       <span>{rec?.uuid}</span>
-                      <button>
-                        {/* <Play size={20} className="text-blue-500" /> */}
-                      </button>
                     </li>
                   ))
                 ) : (
-                  <div className="opacity-75">No recordings available </div>
+                  <div className="opacity-75">No recordings available</div>
                 )}
               </ul>
             </div>
-            <div className="w-1/2 bg-[#0c111d] p-4 rounded-md">
+
+            {/* Agent Scripts List */}
+            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
               <h3 className="mb-2 text-lg">Agent Scripts</h3>
               <ul>
                 {agentScripts?.length > 0 ? (
                   agentScripts?.map((script) => (
-                    <li key={script?.id} className="flex justify-between p-2">
+                    <li key={script?.id} className="flex justify-between p-2 border border-[#333741] rounded-md">
                       <span>{script?.id}</span>
-                      <button>
-                        {/* <Play size={20} className="text-blue-500" /> */}
-                      </button>
                     </li>
                   ))
                 ) : (
-                  <div className="opacity-75">No scripts available </div>
+                  <div className="opacity-75">No scripts available</div>
                 )}
               </ul>
             </div>
           </div>
         ) : (
           <div className="flex gap-6">
+            {/* Parameters Section */}
             <div className="w-1/3">
               <h4 className="mb-2">Parameters</h4>
               {Object.entries(parameters).map(([key, param]) => (
@@ -150,18 +148,20 @@ const ChatRecordingsPage = () => {
                         [key]: e.target.value,
                       })
                     }
-                    className="w-full p-2 border border-gray-700 bg-gray-800 text-white"
+                    className="w-full p-2 border border-[#333741] bg-gray-800 text-white rounded"
                   />
                 </div>
               ))}
               <button
                 onClick={handleReplay}
-                className="w-full p-3 bg-blue-500 mt-4"
+                className="w-full p-3 bg-blue-500 border border-[#333741] mt-4 rounded"
               >
                 Execute Test
               </button>
             </div>
-            <div className="w-2/3">
+
+            {/* Code Editor Section */}
+            <div className="w-2/3 border border-[#333741] rounded-lg p-4">
               <h4 className="mb-2">Code Editor</h4>
               <Editor
                 height="350px"
@@ -174,8 +174,9 @@ const ChatRecordingsPage = () => {
           </div>
         )}
 
+        {/* VNC Viewer */}
         {isReplaying && (
-          <div className="mt-4 w-full h-96 bg-black">
+          <div className="mt-4 w-full h-96 bg-black border border-[#333741] rounded-lg">
             <iframe
               id="vnc-viewer"
               className="w-full h-full border-none"

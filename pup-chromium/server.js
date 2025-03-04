@@ -170,7 +170,9 @@ app.post("/start", (req, res) => {
 });
 
 app.post("/stop", (req, res) => {
-  const { uuid } = req.body;
+  const { uuid } = req.body.uuid;
+  const { title } = req.body.title;
+  console.log(title)
   if (!playwrightProcess) {
     return res.status(400).json({ message: "No recording in progress!" });
   }
@@ -201,6 +203,7 @@ app.post("/stop", (req, res) => {
           fs.writeFileSync(scriptPath, response.script, "utf8");
 
           createNewFile(uuid, "json", JSON.stringify(response.parameters));
+          createNewFile(uuid, "txt", title);
           console.log("Parameters saved to:", `/app/${uuid}.json`);
         } catch (error) {
           console.error("Error refactoring script:", error);
@@ -225,9 +228,11 @@ app.get("/scripts", (req, res) => {
       const uuid = scriptFile.replace(".spec.ts", ""); // Extract UUID
       const scriptPath = path.join("/app/", scriptFile);
       const parametersPath = path.join("/app/", `${uuid}.json`);
+      const titlePath = path.join("/app/", `${uuid}.txt`);
 
       let scriptContent = "";
       let parameters = "";
+      let title = "";
 
       try {
         scriptContent = fs.readFileSync(scriptPath, "utf-8");
@@ -245,12 +250,23 @@ app.get("/scripts", (req, res) => {
           );
         }
       }
+      if (fs.existsSync(titlePath)) {
+        try {
+          title = fs.readFileSync(titlePath, "utf-8");
+        } catch (error) {
+          console.error(
+            `Error reading parameters file ${titlePath}:`,
+            error
+          );
+        }
+      }
 
       return {
         uuid: uuid,
         tag: "script",
         script: scriptContent,
         parameters: parameters,
+        title: title,
       };
     });
 
