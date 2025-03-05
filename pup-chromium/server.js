@@ -135,7 +135,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
   }
 });
 
-app.post("/start", (req, res) => {
+app.post("/start", async (req, res)  => {
   const { targetUrl } = req.body;
   if (!targetUrl) {
     return res.status(400).json({ message: "No target URL provided!" });
@@ -146,6 +146,8 @@ app.post("/start", (req, res) => {
       .status(400)
       .json({ message: "Recording is already in progress!" });
   }
+
+   await closeBrowser();
 
   const fileId = uuidv4();
   scriptPath = `/app/${fileId}.spec.ts`;
@@ -175,20 +177,16 @@ app.post("/stop", (req, res) => {
     return res.status(400).json({ message: "No recording in progress!" });
   }
 
+  if (browserInstance) {
+    browserInstance.contexts().forEach(async (context) => {
+      await context.close();
+    });
+  }
+
   exec(
     "pkill -f 'playwright codegen';pkill chromium; pkill Xvfb; pkill x11vnc",
     async () => {
       playwrightProcess = null;
-      // exec(
-      //   "lsof -i :5900 | grep 'LISTEN' | awk '{print $2}' | xargs kill -9",
-      //   (error) => {
-      //     if (error) {
-      //       console.error("Error killing process on port 5900:", error);
-      //     } else {
-      //       console.log("Killed process using port 5900");
-      //     }
-      //   }
-      // );
 
       if (fs.existsSync(scriptPath)) {
         console.log("Recording saved to:", scriptPath);
@@ -540,6 +538,7 @@ app.post("/process-prompt", async (req, res) => {
 });
 
 async function startBrowser() {
+  await closeBrowser();
   if (browserInstance) {
     console.log("Using existing Chromium instance...");
     const context = await browserInstance.newContext({
@@ -592,6 +591,13 @@ async function startBrowser() {
     console.error("Error launching Chromium:", error);
   }
 }
+
+async function closeBrowser() {
+  if (browserInstance) {
+    await browserInstance.close();
+    browserInstance = null;
+  }
+};
 
 app.post("/refactor", async (req, res) => {
   const { script } = req.body;
