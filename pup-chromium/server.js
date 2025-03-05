@@ -30,7 +30,7 @@ function startServices(callback) {
     if (stdout) {
       console.log("Xvfb is already running.");
     } else {
-      exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
+      exec("Xvfb :99 -screen 0 1024x768x24 & sleep 2", (error) => {
         if (error) {
           console.error("Error starting Xvfb:", error);
           return callback(error);
@@ -44,7 +44,7 @@ function startServices(callback) {
         console.log("x11vnc is already running.");
       } else {
         exec(
-          "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
+          "x11vnc -display :99 -geometry 1024x768 -forever -nopw -bg -rfbport 5900",
           (error) => {
             if (error) {
               console.error("Error starting x11vnc:", error);
@@ -103,7 +103,7 @@ function stopServices(callback) {
   });
 }
 
-exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
+exec("Xvfb :99 -screen 0 1024x768x24 & sleep 2", (error) => {
   if (error) {
     console.error("Error starting Xvfb:", error);
   } else {
@@ -111,7 +111,7 @@ exec("Xvfb :99 -screen 0 1920x1080x24 & sleep 2", (error) => {
 
     // :two: Start x11vnc after Xvfb is confirmed to be running
     exec(
-      "x11vnc -display :99 -geometry 1920x1080 -forever -nopw -bg -rfbport 5900",
+      "x11vnc -display :99 -geometry 1024x768 -forever -nopw -bg -rfbport 5900",
       (error) => {
         if (error) console.error("Error starting x11vnc:", error);
         else console.log("x11vnc running on port 5900");
@@ -542,7 +542,7 @@ async function startBrowser() {
   if (browserInstance) {
     console.log("Using existing Chromium instance...");
     const context = await browserInstance.newContext({
-      viewport: { width: 1920, height: 1080 },
+      viewport: { width: 1024, height: 768 },
     });
 
     const page = await context.newPage();
@@ -569,13 +569,13 @@ async function startBrowser() {
         "--disable-dev-shm-usage",
         "--remote-debugging-port=9222",
         "--display=:99",
-        "--start-fullscreen", // <-- Forces Fullscreen Mode
+        // "--start-fullscreen", // <-- Forces Fullscreen Mode
         "--window-position=0,0", // Ensures it starts at the top-left
       ],
     });
 
     const context = await browserInstance.newContext({
-      viewport: { width: 1920, height: 1080 }, // Ensures full-screen Playwright window
+      viewport: { width: 1024, height: 768 }, // Ensures full-screen Playwright window
     });
 
     const page = await context.newPage();
