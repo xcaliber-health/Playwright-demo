@@ -14,7 +14,7 @@ function WebRecorder({ setActiveTab }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const vncUrl = `${VNC_Url}/vnc.html?autoconnect=true&resize=remote`;
+  const vncUrl = `${VNC_Url}/vnc.html?autoconnect=true`;
 
   const startRecording = async () => {
     if (!url.trim()) {
@@ -154,9 +154,6 @@ function WebRecorder({ setActiveTab }) {
       >
         {isRecording ? (
           <>
-            <h3 className="text-lg font-semibold mb-4 text-[#e5e7eb]">
-              VNC Browser View
-            </h3>
             <iframe
               src={vncUrl}
               className="w-full h-[85vh] border border-[#333741] rounded"

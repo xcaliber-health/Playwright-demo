@@ -4,9 +4,8 @@ function EhrOperator() {
   return (
     <iframe
       src={`${VITE_EHR_AGENT_URL}?autoconnect=true&resize=remote`}
-      title="VNC Viewer"
       width="100%"
-      height="1080px"
+      height="700px"
       style={{ border: "none" }}
     />
   );

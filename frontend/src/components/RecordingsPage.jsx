@@ -66,7 +66,7 @@ const ChatRecordingsPage = () => {
   return (
     <div className="flex h-screen w-full p-4 bg-[#0c111d] text-white">
       {/* Left Sidebar */}
-      <div className="w-1/3 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg self-start py-2 mr-4">
+      <div className="w-1/4 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg self-start py-2 mr-4">
         <div className="p-4  rounded-lg mb-4">
           <h2 className="text-lg font-semibold">Task Description</h2>
           <textarea
@@ -96,7 +96,7 @@ const ChatRecordingsPage = () => {
       </div>
 
       {/* Right Content Section */}
-      <div className="w-2/3 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
+      <div className="w-3/4 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
         {!selectedRecording ? (
           <div className="flex gap-4">
             {/* Recordings List */}
