@@ -7,17 +7,34 @@ const BrowserUse = () => {
   const [additionalInfo, setAdditionalInfo] = useState("");
 
   const [vncStarted, setVncStarted] = useState(false);
+  const [loading, setLoading] = useState(false);
   
     const startVncSession = async () => {
+      if (!taskDescription.trim()) {
+        alert("Please enter a task description.");
+        return;
+      }
+  
+      setLoading(true);
       try {
         const response = await fetch("http://localhost:8000/start_vnc", {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            task: taskDescription, // Sending task
+            task_description: additionalInfo, // Sending additional info
+          }),
         });
         const data = await response.json();
         console.log("VNC Started:", data);
         setVncStarted(true); // Show iframe after starting VNC
       } catch (error) {
         console.error("Error starting VNC:", error);
+        alert("Error starting VNC session. Check console for details.");
+      } finally {
+        setLoading(false); // Re-enable button
       }
     };
 
@@ -46,10 +63,13 @@ const BrowserUse = () => {
         {/* Buttons */}
         <div className="flex px-4 mb-2 gap-4">
           <button
+            disabled={loading}
             onClick={startVncSession} 
-            className="w-1/2 bg-[#224acc] hover:bg-[#1b3a99] px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200"
+            className={`w-1/2 px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200 
+              ${loading ? "bg-gray-600 cursor-not-allowed" : "bg-[#224acc] hover:bg-[#1b3a99]"}`}
+
           >
-            Run Agent
+           {loading ? "Starting..." : "Run Agent"}
           </button>
           <button
             onClick={() => setVncStarted(false)}
