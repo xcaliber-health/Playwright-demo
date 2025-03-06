@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and tag DEV docker image
+      - name: Build and tag MASTER docker image
         run: docker build -t ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/xc-demo:${{ github.sha }} ./xc-demo
 
       - name: Login to Github Packages
@@ -26,5 +26,5 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Publish DEV docker image to GPR
+      - name: Publish MASTER docker image to GPR
         run: docker push ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/xc-demo:${{ github.sha }}
