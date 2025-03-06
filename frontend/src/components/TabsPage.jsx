@@ -2,8 +2,8 @@ import { useState } from "react";
 import WebRecorder from "./WebRecorder";
 import EhrOperator from "./EhrOperator";
 import RecordingsPage from "./RecordingsPage";
+import BrowserUse from "./BrowserUse";
 import logo from "../assets/logo.png";
-
 
 function TabsPage() {
   const [activeTab, setActiveTab] = useState("Agent");
@@ -21,7 +21,7 @@ function TabsPage() {
       {/* Tabs */}
       <div className="p-8 w-full">
         <div className="flex justify-start border-b bg-[#161b26] w-full rounded-md">
-          {["Agent", "Recorder", "Replays"].map((tab) => (
+          {["Agent", "Recorder", "Replays", "BrowserUse"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -42,6 +42,7 @@ function TabsPage() {
           {activeTab === "Agent" && <EhrOperator />}
           {activeTab === "Recorder" && <WebRecorder setActiveTab={setActiveTab} />}
           {activeTab === "Replays" && <RecordingsPage />}
+          {activeTab === "BrowserUse" && <BrowserUse />}
         </div>
       </div>
     </div>
