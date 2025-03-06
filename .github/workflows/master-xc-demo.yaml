@@ -1,4 +1,4 @@
-name: Build and push MASTER xc-demo docker image
+name: Build and push xc-demo-master docker image
 
 on:
   push:
