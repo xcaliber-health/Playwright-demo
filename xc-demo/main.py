@@ -11,7 +11,7 @@ import asyncio
 from browser_use import BrowserConfig, Browser
 from fastapi import FastAPI
 
-
+load_dotenv()
 app = FastAPI()
 
 load_dotenv()
