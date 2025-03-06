@@ -1,0 +1,6 @@
+browser_use
+dotenv
+langchain_openai
+asyncio
+fastapi
+uvicorn
