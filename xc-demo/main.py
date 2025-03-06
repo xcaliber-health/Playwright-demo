@@ -2,6 +2,7 @@ import uvicorn
 import sys
 import os
 import contextlib
+import pydantic
 
 
 from langchain_openai import ChatOpenAI
@@ -34,6 +35,10 @@ config = BrowserContextConfig(
 browser = Browser()
 context = BrowserContext(browser=browser, config=config)
 
+class VncRequest(BaseModel):
+    task: str
+    task_description: str
+
 llm = ChatOpenAI(
     model="gpt-4o",
     temperature=0.0,
@@ -46,9 +51,9 @@ async def main():
     
 
 @app.post("/start_vnc")
-async def start_vnc():
+async def start_vnc(request: VncRequest):
     agent = Agent(
-        task="Compare the price of gpt-4o and DeepSeek-V3",
+        task=request.task,
         llm=llm,
         browser=browser,
     )
