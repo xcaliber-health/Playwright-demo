@@ -6,6 +6,21 @@ const BrowserUse = () => {
   const [taskDescription, setTaskDescription] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
 
+  const [vncStarted, setVncStarted] = useState(false);
+  
+    const startVncSession = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/start_vnc", {
+          method: "POST",
+        });
+        const data = await response.json();
+        console.log("VNC Started:", data);
+        setVncStarted(true); // Show iframe after starting VNC
+      } catch (error) {
+        console.error("Error starting VNC:", error);
+      }
+    };
+
   return (
     <div className="flex h-screen w-full p-4 bg-[#0c111d] text-white">
       {/* Left Sidebar */}
@@ -31,11 +46,13 @@ const BrowserUse = () => {
         {/* Buttons */}
         <div className="flex px-4 mb-2 gap-4">
           <button
+            onClick={startVncSession} 
             className="w-1/2 bg-[#224acc] hover:bg-[#1b3a99] px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200"
           >
             Run Agent
           </button>
           <button
+            onClick={() => setVncStarted(false)}
             className="w-1/2 bg-[#1e3a8a] hover:bg-[#192e75] px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200"
           >
             Stop
@@ -45,7 +62,7 @@ const BrowserUse = () => {
 
       {/* Right Content Section */}
       <div className="w-3/4 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
-        <div className="w-full h-full bg-black border border-[#333741] rounded-lg">
+      {vncStarted ? (<div className="w-full h-full bg-black border border-[#333741] rounded-lg">
           <iframe
             id="browser-viewer"
             className="w-full h-full border-none"
@@ -53,6 +70,9 @@ const BrowserUse = () => {
             src={`${VNC_Url}/vnc.html?autoconnect=true&resize=remote`}
           ></iframe>
         </div>
+        ) : (
+          <p className="text-center text-gray-400">Click "Run Agent" to start VNC session</p>
+        )}
       </div>
     </div>
   );
