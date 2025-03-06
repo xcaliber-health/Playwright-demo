@@ -9,14 +9,18 @@ const BrowserUse = () => {
 
   const [vncStarted, setVncStarted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
     const startVncSession = async () => {
       if (!taskDescription.trim()) {
         alert("Please enter a task description.");
         return;
       }
-  
+
+      // Start iframe immediately
+      setVncStarted(true);
       setLoading(true);
+      setError(null);
       try {
         const response = await fetch(`${agentBackendUrl}/start_vnc`, {
           method: "POST",
@@ -33,7 +37,8 @@ const BrowserUse = () => {
         setVncStarted(true); // Show iframe after starting VNC
       } catch (error) {
         console.error("Error starting VNC:", error);
-        alert("Error starting VNC session. Check console for details.");
+        alert("Error starting Browser");
+        setVncStarted(false);
       } finally {
         setLoading(false); // Re-enable button
       }
@@ -78,6 +83,7 @@ const BrowserUse = () => {
           >
             Stop
           </button>
+          {error && <p className="text-red-500 text-sm px-4">{error}</p>}
         </div>
       </div>
 
