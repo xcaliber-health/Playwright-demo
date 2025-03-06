@@ -1,6 +1,7 @@
 import { Editor } from "@monaco-editor/react";
-import { Play } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const VNC_Url = import.meta.env.VITE_VNC_URL;
 const backendUrl = import.meta.env.VITE_BASE_URL;
@@ -31,7 +32,11 @@ const ChatRecordingsPage = () => {
 
   const loadRecording = async (uuid) => {
     setSelectedRecording(uuid);
-    alert(`Recording with uuid:${uuid} selected`);
+
+    toast.info(`Recording with UUID: ${uuid} selected`, {
+      position: "top-right",
+    });
+
     const res = await fetch(`${backendUrl}/file/${uuid}`);
     const data = await res.json();
     setCode(data.script);
@@ -56,53 +61,48 @@ const ChatRecordingsPage = () => {
     await fetch(`${backendUrl}/process-prompt`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uuid: selectedRecording,
-        prompt: prompt,
-      }),
+      body: JSON.stringify({ uuid: selectedRecording, prompt }),
     });
   };
 
   return (
-    <div className="flex h-screen w-full p-4 bg-[#0c111d] text-white">
-      {/* Left Sidebar */}
-      <div className="w-1/4 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg self-start py-2 mr-4">
-        <div className="p-4  rounded-lg mb-4">
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-5 bg-[#0c111d] overflow-hidden text-white">
+      {/* Left Sidebar (h-fit, equal spacing) */}
+      <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741] h-fit">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold">Task Description</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-10 mt-2 rounded-md border border-[#333741] focus:outline-none"
+            className="w-full h-20 bg-[#0c111d] text-white p-2 mt-2 rounded-md border border-[#333741] focus:outline-none"
             placeholder="Describe what you want the agent to do"
             onChange={(e) => setTaskDescription(e.target.value)}
           ></textarea>
         </div>
 
-        <div className="p-4 rounded-lg mb-4">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold">Additional Information</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-4 mt-2 rounded-lg border border-[#333741] focus:outline-none"
+            className="w-full h-20 bg-[#0c111d] text-white p-2 mt-2 rounded-lg border border-[#333741] focus:outline-none"
             placeholder="Add any helpful context or instructions..."
             onChange={(e) => setAdditionalInfo(e.target.value)}
           ></textarea>
         </div>
 
-        <div className="flex px-4 mb-2">
-          <button
-            className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#333741]"
-            onClick={handlePromptExecution}
-          >
-            Run Agent
-          </button>
-        </div>
+        <button
+          className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#333741]"
+          onClick={handlePromptExecution}
+        >
+          Run Agent
+        </button>
       </div>
 
-      {/* Right Content Section */}
-      <div className="w-3/4 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg">
+      {/* Right Content Section (Takes Full Width) */}
+      <div className="flex-grow rounded-lg shadow-md bg-[#161b26] border border-[#333741] p-5 flex flex-col text-white h-full">
         {!selectedRecording ? (
-          <div className="flex gap-4">
+          <div className="flex flex-grow gap-5">
             {/* Recordings List */}
-            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
+            <div className="w-1/2 bg-[#0c111d] p-5 border border-[#333741] rounded-lg h-full">
               <h3 className="mb-2 text-lg">Recordings</h3>
-              <ul>
+              <ul className="h-[calc(100%-40px)] overflow-auto">
                 {recordings?.length > 0 ? (
                   recordings?.map((rec) => (
                     <li
@@ -120,9 +120,9 @@ const ChatRecordingsPage = () => {
             </div>
 
             {/* Agent Scripts List */}
-            <div className="w-1/2 bg-[#0c111d] p-4 border border-[#333741] rounded-md">
+            <div className="w-1/2 bg-[#0c111d] p-5 border border-[#333741] rounded-lg h-full">
               <h3 className="mb-2 text-lg">Agent Scripts</h3>
-              <ul>
+              <ul className="h-[calc(100%-40px)] overflow-auto">
                 {agentScripts?.length > 0 ? (
                   agentScripts?.map((script) => (
                     <li
@@ -139,9 +139,9 @@ const ChatRecordingsPage = () => {
             </div>
           </div>
         ) : !isReplaying ? (
-          <div className="flex gap-6">
+          <div className="flex flex-grow gap-5 text-white">
             {/* Parameters Section */}
-            <div className="w-1/3">
+            <div className="w-1/3 h-full">
               <h4 className="mb-2">Parameters</h4>
               {Object.entries(parameters).map(([key, param]) => (
                 <div key={key} className="mb-4">
@@ -167,20 +167,26 @@ const ChatRecordingsPage = () => {
               </button>
             </div>
 
-            {/* Code Editor Section */}
-            <div className="w-2/3 border border-[#333741] rounded-lg p-4">
+            {/* Code Editor Section (No Overflow, Fits Wrapper) */}
+            <div className="w-2/3 border border-[#333741] rounded-lg p-5 h-[75vh] flex flex-col">
               <h4 className="mb-2">Code Editor</h4>
-              <Editor
-                height="350px"
-                defaultLanguage="javascript"
-                theme="vs-dark"
-                value={code}
-                onChange={setCode}
-              />
+              <div className="flex-grow overflow-hidden">
+                <Editor
+                  height="100%"
+                  defaultLanguage="javascript"
+                  theme="vs-dark"
+                  value={code}
+                  onChange={setCode}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollbar: { vertical: "hidden" },
+                  }}
+                />
+              </div>
             </div>
           </div>
         ) : (
-          <div className="mt-4 w-full h-full bg-black border border-[#333741] rounded-lg">
+          <div className="w-full h-full bg-black border border-[#333741] rounded-lg">
             <iframe
               id="vnc-viewer"
               className="w-full h-full border-none"

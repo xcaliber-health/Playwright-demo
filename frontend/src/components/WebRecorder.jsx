@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { StopCircle } from "lucide-react";
 import TestRunner from "./RecordingsPage";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const VNC_Url = import.meta.env.VITE_VNC_URL;
 const backendUrl = import.meta.env.VITE_BASE_URL;
@@ -14,11 +16,11 @@ function WebRecorder({ setActiveTab }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const vncUrl = `${VNC_Url}/vnc.html?autoconnect=true`;
+  const vncUrl = `${VNC_Url}/vnc.html?autoconnect=true&resize=remote`;
 
   const startRecording = async () => {
     if (!url.trim()) {
-      alert("Please enter a valid URL");
+      toast.error("Please enter a valid URL", { position: "top-right" });
       return;
     }
 
@@ -31,7 +33,9 @@ function WebRecorder({ setActiveTab }) {
         body: JSON.stringify({ targetUrl: url }),
       });
       const data = await response.json();
-      alert(data.message);
+
+      toast.info(data.message, { position: "top-right" });
+
       setIsRecording(true);
       setShowTestRunner(false);
       setRecordingUuid(data.uuid);
@@ -51,7 +55,9 @@ function WebRecorder({ setActiveTab }) {
         body: JSON.stringify({ uuid: recordingUuid, title: operation }),
       });
       const data = await response.json();
-      alert(data.message);
+
+      toast.info(data.message, { position: "top-right" });
+
       setIsRecording(false);
       setShowTestRunner(true);
       setActiveTab("Replays");
@@ -60,106 +66,71 @@ function WebRecorder({ setActiveTab }) {
     }
     setIsProcessing(false);
   };
-  console.log(
-    "first",
-    JSON.stringify({ uuid: recordingUuid, title: operation })
-  );
+
   return (
-    <div className="w-full flex h-screen p-5 font-sans gap-5 bg-[#0c111d]">
-      {/* Sidebar */}
-      <div
-        className={`${
-          isRecording && !isProcessing ? "w-16" : "w-1/4"
-        } p-5 rounded-lg shadow-md transition-all duration-300 bg-[#161b26] border border-[#333741]`}
-      >
-        {!isRecording || isProcessing ? (
-          <>
-            <h2 className="text-xl font-bold mb-4 text-[#e5e7eb]">
-              Web Recorder
-            </h2>
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-5 bg-[#0c111d] overflow-hidden">
+      {/* Sidebar (Fixed width, no collapsing) */}
+      <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741]">
+        <h2 className="text-xl font-bold mb-4 text-[#e5e7eb]">Web Recorder</h2>
 
-            {/* Operation Name */}
-            <label className="block text-[#e5e7eb] font-semibold mb-2">
-              Operation Name
-            </label>
-            <input
-              type="text"
-              value={operation}
-              onChange={(e) => setOperation(e.target.value)}
-              placeholder="Enter operation name"
-              className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
-            />
+        {/* Operation Name */}
+        <label className="block text-[#e5e7eb] font-semibold mb-2">
+          Operation Name
+        </label>
+        <input
+          type="text"
+          value={operation}
+          onChange={(e) => setOperation(e.target.value)}
+          placeholder="Enter operation name"
+          className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
+        />
 
-            {/* Target URL */}
-            <label className="block text-[#e5e7eb] font-semibold mb-2">
-              Target URL
-            </label>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter website URL"
-              className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
-            />
+        {/* Target URL */}
+        <label className="block text-[#e5e7eb] font-semibold mb-2">
+          Target URL
+        </label>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter website URL"
+          className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
+        />
 
-            <div className="flex gap-4">
-              <button
-                onClick={startRecording}
-                disabled={isRecording && !isProcessing}
-                className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
-                  isRecording && !isProcessing
-                    ? "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
-                    : "bg-[#2563eb] hover:bg-[#1e40af]"
-                }`}
-              >
-                {isRecording ? "Recording..." : "Start"}
-              </button>
-              <button
-                onClick={stopRecording}
-                disabled={!isRecording}
-                className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
-                  isRecording
-                    ? "bg-[#3b82f6] hover:bg-[#2563eb]"
-                    : "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
-                }`}
-              >
-                Stop
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center space-y-4 relative">
-            <button
-              onClick={stopRecording}
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
-              className="bg-[#3b82f6] hover:bg-[#2563eb] text-white p-3 rounded-full relative"
-            >
-              <StopCircle size={24} />
-            </button>
-            {showTooltip && (
-              <div className="absolute top-10 bg-black text-white text-xs rounded px-2 py-1">
-                Stop
-              </div>
-            )}
-          </div>
-        )}
+        <div className="flex gap-4">
+          <button
+            onClick={startRecording}
+            disabled={isRecording && !isProcessing}
+            className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
+              isRecording && !isProcessing
+                ? "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
+                : "bg-[#2563eb] hover:bg-[#1e40af]"
+            }`}
+          >
+            {isRecording ? "Recording..." : "Start"}
+          </button>
+          <button
+            onClick={stopRecording}
+            disabled={!isRecording}
+            className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
+              isRecording
+                ? "bg-[#3b82f6] hover:bg-[#2563eb]"
+                : "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
+            }`}
+          >
+            Stop
+          </button>
+        </div>
       </div>
 
       {/* Main Panel */}
-      <div
-        className={`${
-          isRecording ? "w-full" : "w-3/4"
-        } flex-1 p-5 rounded-lg shadow-md transition-all duration-300 bg-[#161b26] border border-[#333741]`}
-      >
+      <div className="flex-grow rounded-lg shadow-md bg-[#161b26] border border-[#333741] overflow-auto p-4">
         {isRecording ? (
-          <>
-            <iframe
-              src={vncUrl}
-              className="w-full h-[85vh] border border-[#333741] rounded"
-              title="VNC Viewer"
-            />
-          </>
+          <iframe
+            src={vncUrl}
+            className="w-full h-full border border-[#333741] rounded"
+            title="Viewer"
+          />
         ) : showTestRunner ? (
           <TestRunner uuid={recordingUuid} />
         ) : (
