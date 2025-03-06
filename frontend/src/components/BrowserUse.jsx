@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 const VNC_Url = import.meta.env.VITE_VNC_URL;
+const agentBackendUrl = import.meta.env.VITE_AGENT_BASE_URL;
 
 const BrowserUse = () => {
   const [taskDescription, setTaskDescription] = useState("");
@@ -17,7 +18,7 @@ const BrowserUse = () => {
   
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:8000/start_vnc", {
+        const response = await fetch(`${agentBackendUrl}/start_vnc`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
