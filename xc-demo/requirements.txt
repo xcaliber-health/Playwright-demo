@@ -1,6 +1,10 @@
-browser_use
 dotenv
 langchain_openai
 asyncio
 fastapi
 uvicorn
+python-dotenv
+langchain_openai
+asyncio
+posthog
+playwright
