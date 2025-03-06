@@ -2,8 +2,8 @@ import uvicorn
 import sys
 import os
 import contextlib
-import pydantic
-
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 from langchain_openai import ChatOpenAI
 from browser_use.agent.service import Agent
@@ -20,6 +20,23 @@ load_dotenv()
 import asyncio
 from browser_use import BrowserConfig,Browser
 from browser_use.browser.context import BrowserContextConfig, BrowserContext
+
+
+origins = [
+    "http://localhost",
+    "http://localhost:8080", # if your front end is on port 8080
+    "http://your-frontend-domain.com", #replace with your front end domain
+    "https://your-frontend-domain.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 config = BrowserContextConfig(
     wait_for_network_idle_page_load_time=3.0,
@@ -52,12 +69,13 @@ async def main():
 
 @app.post("/start_vnc")
 async def start_vnc(request: VncRequest):
+    print("********" + request.task)
     agent = Agent(
         task=request.task,
         llm=llm,
         browser=browser,
     )
-    result = agent.run()
+    result = await agent.run()
     return {"success": True}
 
 @app.get("/hello")
