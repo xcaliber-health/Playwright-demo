@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const VNC_Url = import.meta.env.VITE_VNC_URL;
+const VNC_Url = import.meta.env.VITE_AGENT_VNC_URL;
 const agentBackendUrl = import.meta.env.VITE_AGENT_BASE_URL;
 
 const BrowserUse = () => {
