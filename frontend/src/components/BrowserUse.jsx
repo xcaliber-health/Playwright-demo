@@ -31,6 +31,7 @@ const prompts = [
 
 const BrowserUse = () => {
   const [taskDescription, setTaskDescription] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
   const [sessionStarted, setSessionStarted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +51,10 @@ const BrowserUse = () => {
       const response = await fetch(`${backendUrl}/start_vnc`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: finalTask }),
+        body: JSON.stringify({
+          task: finalTask,
+          task_description: additionalInfo,
+        }),
       });
 
       if (!response.ok) throw new Error("Session failed to start");
