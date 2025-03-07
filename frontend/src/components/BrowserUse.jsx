@@ -48,13 +48,14 @@ const BrowserUse = () => {
   };
 
   return (
-    <div className="flex h-full w-full p-4 bg-[#0c111d] text-white">
+    <div className="flex h-full w-full p-4 bg-[#0a0a0a] text-white">
       {/* Left Sidebar */}
-      <div className="w-1/4 flex flex-col bg-[#161b26] border border-[#333741] rounded-lg h-fit py-2 mr-4">
+      <div className="w-1/4 flex flex-col bg-[#171717] border border-[#2f2f2f] rounded-lg h-fit mr-4">
         <div className="px-4 mb-4">
+        <h2 className="text-xl font-bold mb-4 text-[#e5e7eb] my-4">EHR Agent</h2>
           <h2 className="text-md font-semibold">Task Description</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-12 mt-2 rounded-md border border-[#333741] focus:outline-none text-sm"
+            className="w-full bg-[#262626] text-white p-2 pb-12 mt-2 rounded-md border border-[#2f2f2f] focus:outline-none text-sm"
             placeholder="Describe what you want the browser to do"
             onChange={(e) => setTaskDescription(e.target.value)}
           ></textarea>
@@ -63,7 +64,7 @@ const BrowserUse = () => {
         <div className="px-4  mb-4">
           <h2 className="text-md font-semibold">Additional Information</h2>
           <textarea
-            className="w-full bg-[#0c111d] text-white p-2 pb-4 mt-2 rounded-lg border border-[#333741] focus:outline-none text-sm"
+            className="w-full bg-[#262626] text-white p-2 pb-4 mt-2 rounded-lg border border-[#2f2f2f] focus:outline-none text-sm"
             placeholder="Add any helpful context or instructions..."
             onChange={(e) => setAdditionalInfo(e.target.value)}
           ></textarea>
@@ -74,7 +75,7 @@ const BrowserUse = () => {
           <button
             disabled={loading}
             onClick={startVncSession}
-            className={`w-1/2 px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200 
+            className={`w-1/2 px-4 py-2 rounded-lg border border-[#2f2f2f] transition-all duration-200 
               ${
                 loading
                   ? "bg-gray-600 cursor-not-allowed"
@@ -85,7 +86,7 @@ const BrowserUse = () => {
           </button>
           <button
             onClick={() => setVncStarted(false)}
-            className="w-1/2 bg-[#1e3a8a] hover:bg-[#192e75] px-4 py-2 rounded-lg border border-[#333741] transition-all duration-200"
+            className="w-1/2 bg-[#1e3a8a] hover:bg-[#192e75] px-4 py-2 rounded-lg border border-[#2f2f2f] transition-all duration-200"
           >
             Stop
           </button>
@@ -95,9 +96,9 @@ const BrowserUse = () => {
 
       {/* Right Content Section */}
       {/* Right Content Section */}
-      <div className="w-3/4 bg-[#161b26] border border-[#333741] p-4 rounded-lg shadow-lg h-full relative">
+      <div className="w-3/4 bg-[#171717] border border-[#2f2f2f] p-4 rounded-lg shadow-lg h-full relative">
         {vncStarted ? (
-          <div className="w-full h-full bg-black border border-[#333741] rounded-lg relative">
+          <div className="w-full h-full bg-black border border-[#2f2f2f] rounded-lg relative">
             <iframe
               id="browser-viewer"
               className="w-full h-full absolute inset-0 border-none"

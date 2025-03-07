@@ -12,7 +12,7 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
   return (
     <aside
       className={cn(
-        "h-screen bg-[#161b26] text-white flex flex-col transition-all duration-300",
+        "h-screen bg-[#171717] text-white flex flex-col transition-all duration-300",
         isOpen ? "w-64 p-4" : "w-16 p-2"
       )}
     >
@@ -26,7 +26,7 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
         )}
         <button
           onClick={() => setIsSidebarOpen(!isOpen)}
-          className="p-2 rounded-md text-white hover:bg-[#252b38] transition flex justify-center"
+          className="p-2 rounded-md text-white hover:bg-[#2f2f2f] transition flex justify-center hover:cursor-pointer"
         >
           <Menu size={24} />
         </button>
@@ -41,8 +41,8 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
             className={cn(
               "flex items-center w-full rounded-md text-lg transition-all",
               activeTab === tab.name
-                ? "bg-[#374151] text-white"
-                : "text-gray-400 hover:bg-[#252b38] hover:text-white",
+                ? "bg-[#2f2f2f] text-white hover:cursor-pointer"
+                : "text-gray-400 hover:bg-[#292929] hover:text-white hover:cursor-pointer",
               isOpen ? "px-4 py-3" : "py-3 justify-center"
             )}
           >

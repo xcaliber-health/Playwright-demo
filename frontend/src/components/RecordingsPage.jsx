@@ -66,13 +66,13 @@ const ChatRecordingsPage = () => {
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0c111d] overflow-hidden text-white">
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0a0a0a] overflow-hidden text-white">
       {/* Left Sidebar (h-fit, equal spacing) */}
-      <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741] h-fit">
+      <div className="w-full lg:w-1/4 p-4 rounded-lg shadow-md bg-[#171717] border border-[#2f2f2f] h-fit">
         <div className="mb-4">
           <h2 className="text-lg font-semibold">Task Description</h2>
           <textarea
-            className="w-full h-20 bg-[#0c111d] text-white p-2 mt-2 rounded-md border border-[#333741] focus:outline-none"
+            className="w-full h-20 bg-[#262626] text-white p-2 mt-2 rounded-md border border-[#2f2f2f] focus:outline-none"
             placeholder="Describe what you want the agent to do"
             onChange={(e) => setTaskDescription(e.target.value)}
           ></textarea>
@@ -81,14 +81,14 @@ const ChatRecordingsPage = () => {
         <div className="mb-4">
           <h2 className="text-lg font-semibold">Additional Information</h2>
           <textarea
-            className="w-full h-20 bg-[#0c111d] text-white p-2 mt-2 rounded-lg border border-[#333741] focus:outline-none"
+            className="w-full h-20 bg-[#262626] text-white p-2 mt-2 rounded-lg border border-[#2f2f2f] focus:outline-none"
             placeholder="Add any helpful context or instructions..."
             onChange={(e) => setAdditionalInfo(e.target.value)}
           ></textarea>
         </div>
 
         <button
-          className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#333741]"
+          className="w-full bg-blue-600 px-4 py-2 rounded-lg border border-[#2f2f2f]"
           onClick={handlePromptExecution}
         >
           Run Agent
@@ -96,18 +96,18 @@ const ChatRecordingsPage = () => {
       </div>
 
       {/* Right Content Section (Takes Full Width) */}
-      <div className="flex-grow rounded-lg shadow-md bg-[#161b26] border border-[#333741] p-5 flex flex-col text-white h-full">
+      <div className="flex-grow rounded-lg shadow-md bg-[#171717] border border-[#2f2f2f] p-5 flex flex-col text-white h-full">
         {!selectedRecording ? (
           <div className="flex flex-grow gap-5">
             {/* Recordings List */}
-            <div className="w-1/2 bg-[#0c111d] p-5 border border-[#333741] rounded-lg h-full">
+            <div className="w-1/2 bg-[#262626] p-5 border border-[#2f2f2f] rounded-lg h-full">
               <h3 className="mb-2 text-lg">Recordings</h3>
               <ul className="h-[calc(100%-40px)] overflow-auto">
                 {recordings?.length > 0 ? (
                   recordings?.map((rec) => (
                     <li
                       key={rec?.uuid}
-                      className="flex justify-between p-2 cursor-pointer hover:bg-[#161b26e7] border border-[#333741] rounded-md"
+                      className="flex justify-between p-2 cursor-pointer bg-[#171717] hover:bg-[#212121] border border-[#2f2f2f] rounded-md mb-2"
                       onClick={() => loadRecording(rec?.uuid)}
                     >
                       <span>{rec?.title || rec?.uuid}</span>
@@ -120,14 +120,14 @@ const ChatRecordingsPage = () => {
             </div>
 
             {/* Agent Scripts List */}
-            <div className="w-1/2 bg-[#0c111d] p-5 border border-[#333741] rounded-lg h-full">
+            <div className="w-1/2 bg-[#262626] p-5 border border-[#2f2f2f] rounded-lg h-full">
               <h3 className="mb-2 text-lg">Agent Scripts</h3>
               <ul className="h-[calc(100%-40px)] overflow-auto">
                 {agentScripts?.length > 0 ? (
                   agentScripts?.map((script) => (
                     <li
                       key={script?.id}
-                      className="flex justify-between p-2 border border-[#333741] rounded-md"
+                      className="flex justify-between p-2 border bg-[#171717] hover:bg-[#212121]  border-[#2f2f2f] rounded-md mb-2"
                     >
                       <span>{script?.id}</span>
                     </li>
@@ -155,20 +155,20 @@ const ChatRecordingsPage = () => {
                         [key]: e.target.value,
                       })
                     }
-                    className="w-full p-2 border border-[#333741] bg-gray-800 text-white rounded"
+                    className="w-full p-2 border border-[#2f2f2f] bg-gray-800 text-white rounded"
                   />
                 </div>
               ))}
               <button
                 onClick={handleReplay}
-                className="w-full p-3 bg-blue-500 border border-[#333741] mt-4 rounded"
+                className="w-full p-3 bg-blue-500 border border-[#2f2f2f] mt-4 rounded"
               >
                 Execute Test
               </button>
             </div>
 
             {/* Code Editor Section (No Overflow, Fits Wrapper) */}
-            <div className="w-2/3 border border-[#333741] rounded-lg p-5 h-[75vh] flex flex-col">
+            <div className="w-2/3 border border-[#2f2f2f] rounded-lg p-5 h-[75vh] flex flex-col">
               <h4 className="mb-2">Code Editor</h4>
               <div className="flex-grow overflow-hidden">
                 <Editor
@@ -186,7 +186,7 @@ const ChatRecordingsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="w-full h-full bg-black border border-[#333741] rounded-lg">
+          <div className="w-full h-full bg-black border border-[#2f2f2f] rounded-lg">
             <iframe
               id="vnc-viewer"
               className="w-full h-full border-none"

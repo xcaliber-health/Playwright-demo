@@ -68,9 +68,9 @@ function WebRecorder({ setActiveTab }) {
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0c111d] overflow-hidden">
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0a0a0a] overflow-hidden">
       {/* Sidebar (Fixed width, no collapsing) */}
-      <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741]">
+      <div className="w-full lg:w-1/4 p-4 rounded-lg shadow-md bg-[#171717] border border-[#2f2f2f] h-fit">
         <h2 className="text-xl font-bold mb-4 text-[#e5e7eb]">Web Recorder</h2>
 
         {/* Operation Name */}
@@ -82,7 +82,7 @@ function WebRecorder({ setActiveTab }) {
           value={operation}
           onChange={(e) => setOperation(e.target.value)}
           placeholder="Enter operation name"
-          className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
+          className="w-full p-3 text-lg border border-[#2f2f2f] bg-[#262626] text-[#e5e7eb] rounded mb-4"
         />
 
         {/* Target URL */}
@@ -94,7 +94,7 @@ function WebRecorder({ setActiveTab }) {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter website URL"
-          className="w-full p-3 text-lg border border-[#333741] bg-[#0c111d] text-[#e5e7eb] rounded mb-4"
+          className="w-full p-3 text-lg border border-[#2f2f2f] bg-[#262626] text-[#e5e7eb] rounded mb-4"
         />
 
         <div className="flex gap-4">
@@ -124,11 +124,11 @@ function WebRecorder({ setActiveTab }) {
       </div>
 
       {/* Main Panel */}
-      <div className="flex-grow rounded-lg shadow-md bg-[#161b26] border border-[#333741] overflow-auto p-4">
+      <div className="flex-grow rounded-lg shadow-md bg-[#171717] border border-[#2f2f2f] overflow-auto p-4">
         {isRecording ? (
           <iframe
             src={vncUrl}
-            className="w-full h-full border border-[#333741] rounded"
+            className="w-full h-full border border-[#2f2f2f] rounded"
             title="Viewer"
           />
         ) : showTestRunner ? (
