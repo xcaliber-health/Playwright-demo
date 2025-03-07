@@ -4,6 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import CardAgent from "./ui/CardAgent";
 
 const backendUrl = import.meta.env.VITE_AGENT_BASE_URL;
+const VNC_Url = import.meta.env.VITE_AGENT_VNC_URL;
 
 const prompts = [
   {
@@ -163,7 +164,7 @@ const BrowserUse = () => {
             <div className="w-full h-full bg-black border border-[#2f2f2f] overflow-hidden">
               <iframe
                 className="w-full h-full border-none "
-                src={`${backendUrl}/session.html?autoconnect=true&resize=remote`}
+                src={`${VNC_Url}/vnc.html?autoconnect=true&resize=remote`}
                 title="Session Viewer"
               ></iframe>
             </div>
