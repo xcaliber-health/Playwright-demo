@@ -1,117 +1,175 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CardAgent from "./ui/CardAgent";
 
-const VNC_Url = import.meta.env.VITE_AGENT_VNC_URL;
-const agentBackendUrl = import.meta.env.VITE_AGENT_BASE_URL;
+const backendUrl = import.meta.env.VITE_AGENT_BASE_URL;
+
+const prompts = [
+  {
+    prompt: "Patient Details App",
+    displayText: "Patient Details App",
+    placeholder: "View details...",
+  },
+  {
+    prompt: "Patient Search App",
+    displayText: "Patient Search App",
+    placeholder: "Search patients...",
+  },
+  {
+    prompt: "Diagnosis and Code Summary App",
+    displayText: "Diagnosis Summary",
+    placeholder: "View summary...",
+  },
+  {
+    prompt: "Scheduling Workflow App",
+    displayText: "Scheduling Workflow App",
+    placeholder: "Manage schedules...",
+  },
+];
 
 const BrowserUse = () => {
   const [taskDescription, setTaskDescription] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
-
-  const [vncStarted, setVncStarted] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const startVncSession = async () => {
-    if (!taskDescription.trim()) {
-      toast.error("Enter a task description!", { position: "top-right" });
-
+  const startSession = async (task) => {
+    const finalTask = task || taskDescription;
+    if (!finalTask.trim()) {
+      toast.error("Please enter a task description.", {
+        position: "top-right",
+      });
       return;
     }
 
-    setVncStarted(true);
+    setSessionStarted(true);
     setLoading(true);
-    setError(null);
 
     try {
-      const response = await fetch(`${agentBackendUrl}/start_vnc`, {
+      const response = await fetch(`${backendUrl}/start_session`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          task: taskDescription,
-          task_description: additionalInfo,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: finalTask }),
       });
-      const data = await response.json();
-      // console.log("VNC Started:", data);
-      setVncStarted(true);
+
+      if (!response.ok) throw new Error("Session failed to start");
+
+      await response.json();
     } catch (error) {
-      console.error("Error starting VNC:", error);
-      // toast.error("Error starting VNC:", { position: "top-right" });
-      setVncStarted(false);
+      console.error("Error starting session:", error);
+      setSessionStarted(false);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCardClick = (promptText) => {
+    toast.info(`"${promptText}" selected`, { position: "top-right" });
+    setTaskDescription(promptText);
+    startSession(promptText);
+  };
+
   return (
-    <div className="flex h-full w-full p-4 bg-[#0a0a0a] text-white">
-      {/* Left Sidebar */}
-      <div className="w-1/4 flex flex-col bg-[#171717] border border-[#2f2f2f] rounded-lg h-fit mr-4">
-        <div className="px-4 mb-4">
-        <h2 className="text-xl font-bold mb-4 text-[#e5e7eb] my-4">EHR Agent</h2>
-          <h2 className="text-md font-semibold">Task Description</h2>
-          <textarea
-            className="w-full bg-[#262626] text-white p-2 pb-12 mt-2 rounded-md border border-[#2f2f2f] focus:outline-none text-sm"
-            placeholder="Describe what you want the browser to do"
-            onChange={(e) => setTaskDescription(e.target.value)}
-          ></textarea>
-        </div>
+    <div className="flex flex-col w-full h-[calc(100vh-60px)] overflow-hidden bg-[#0a0a0a] text-white">
+      {!sessionStarted ? (
+        <div className="flex flex-col items-center justify-center w-full h-full">
+          <h1 className="text-4xl font-bold mb-6">
+            What workflows would you like to explore?
+          </h1>
 
-        <div className="px-4  mb-4">
-          <h2 className="text-md font-semibold">Additional Information</h2>
-          <textarea
-            className="w-full bg-[#262626] text-white p-2 pb-4 mt-2 rounded-lg border border-[#2f2f2f] focus:outline-none text-sm"
-            placeholder="Add any helpful context or instructions..."
-            onChange={(e) => setAdditionalInfo(e.target.value)}
-          ></textarea>
-        </div>
+          <div className="relative w-2/4 bg-[#171717] border border-[#2f2f2f] rounded-lg p-4">
+            {/* Fading border effect */}
+            <div
+              className="absolute inset-0 border-[#5A9EC7] border-t border-l rounded-lg pointer-events-none"
+              style={{
+                maskImage:
+                  "linear-gradient(to right, rgba(90, 158, 199, 1), rgba(90, 158, 199, 0)), linear-gradient(to bottom, rgba(90, 158, 199, 1), rgba(90, 158, 199, 0))",
+                WebkitMaskImage:
+                  "linear-gradient(to right, rgba(90, 158, 199, 1), rgba(90, 158, 199, 0)), linear-gradient(to bottom, rgba(90, 158, 199, 1), rgba(90, 158, 199, 0))",
+              }}
+            ></div>
 
-        {/* Buttons */}
-        <div className="flex px-4 mb-2 gap-4">
-          <button
-            disabled={loading}
-            onClick={startVncSession}
-            className={`w-1/2 px-4 py-2 rounded-lg border border-[#2f2f2f] transition-all duration-200 
-              ${
-                loading
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-[#224acc] hover:bg-[#1b3a99]"
-              }`}
-          >
-            {loading ? "Starting..." : "Run Agent"}
-          </button>
-          <button
-            onClick={() => setVncStarted(false)}
-            className="w-1/2 bg-[#1e3a8a] hover:bg-[#192e75] px-4 py-2 rounded-lg border border-[#2f2f2f] transition-all duration-200"
-          >
-            Stop
-          </button>
-          {error && <p className="text-red-500 text-sm px-4">{error}</p>}
-        </div>
-      </div>
+            {/* Textarea */}
+            <textarea
+              className="w-full bg-[#171717] text-white p-3 pb-14 rounded-md border border-[#2f2f2f] focus:outline-none text-sm resize-none"
+              placeholder="Describe what you want the browser to do"
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+            ></textarea>
 
-      {/* Right Content Section */}
-      {/* Right Content Section */}
-      <div className="w-3/4 bg-[#171717] border border-[#2f2f2f] p-4 rounded-lg shadow-lg h-full relative">
-        {vncStarted ? (
-          <div className="w-full h-full bg-black border border-[#2f2f2f] rounded-lg relative">
-            <iframe
-              id="browser-viewer"
-              className="w-full h-full absolute inset-0 border-none"
-              title="Browser Viewer"
-              src={`${VNC_Url}/vnc.html?autoconnect=true&resize=remote`}
-            ></iframe>
+            {/* Button */}
+            <div className="flex justify-end mt-3">
+              <button
+                disabled={loading}
+                onClick={() => startSession()}
+                className={`px-4 py-2 rounded-lg border border-[#2f2f2f] transition-all 
+        ${
+          loading
+            ? "bg-gray-600 cursor-not-allowed"
+            : "bg-[#224acc] hover:bg-[#1b3a99]"
+        }`}
+              >
+                {loading ? "Starting..." : "Run Agent"}
+              </button>
+            </div>
           </div>
-        ) : (
-          <p className="text-center text-gray-400">
-            Click "Run Agent" to start the session
-          </p>
-        )}
-      </div>
+
+          {/* Cards Section */}
+          <div className="w-full max-w-6xl mt-10 px-6">
+            <h2 className="text-xl font-semibold">Community Apps</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              {prompts.map((item, index) => (
+                <CardAgent
+                  key={index}
+                  prompt={item.prompt}
+                  displayText={item.displayText}
+                  placeholder={item.placeholder}
+                  onCardClick={handleCardClick}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full w-full">
+          <div className="w-1/4 h-full bg-[#0a0a0a] px-4 flex flex-col">
+            <div className="bg-[#171717] p-4 rounded-lg border border-[#2f2f2f]">
+              <h1 className="text-xl font-bold text-white mb-4">
+                What workflows would you like to explore?
+              </h1>
+              <textarea
+                className="w-full h-[100px] bg-[#171717] text-white p-2 rounded-md border border-[#2f2f2f] focus:outline-none text-sm"
+                value={taskDescription}
+                disabled
+              ></textarea>
+              <div className="flex gap-2 mt-4">
+                <button
+                  disabled={loading}
+                  className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg border border-[#2f2f2f] cursor-not-allowed"
+                >
+                  Starting...
+                </button>
+                <button
+                  onClick={() => setSessionStarted(false)}
+                  className="flex-1 bg-[#224acc] hover:bg-[#1b3a99] text-white px-4 py-2 rounded-lg border border-[#2f2f2f]"
+                >
+                  Stop
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 h-full bg-[#171717] border border-[#2f2f2f] p-4 mb-2 rounded-lg mr-2">
+            <div className="w-full h-full bg-black border border-[#2f2f2f] overflow-hidden">
+              <iframe
+                className="w-full h-full border-none "
+                src={`${backendUrl}/session.html?autoconnect=true&resize=remote`}
+                title="Session Viewer"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,13 +1,18 @@
 import { cn } from "../../lib/utils.js";
-import { Video, History, Book, Menu } from "lucide-react";
+import { Menu, Bot, Server } from "lucide-react";
 import logo from "../../assets/logo.png";
 
 const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
   const tabs = [
-    { name: "EHR Agent", icon: <Book size={22} /> },
-    { name: "Recorder", icon: <Video size={22} /> },
-    { name: "Replays", icon: <History size={22} /> }
+    { name: "Assistant", icon: <Bot size={22} /> }, 
+    { name: "System", icon: <Server size={22} /> }, 
+    // { name: "Replays", icon: <History size={22} /> } // Commented out
   ];
+
+  // Refresh Page on Click
+  const handleLogoClick = () => {
+    window.location.reload(); 
+  };
 
   return (
     <aside
@@ -19,9 +24,18 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
       {/* Sidebar Header */}
       <div className="flex items-center justify-between mb-4">
         {isOpen && (
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="EHR Operator Logo" className="h-8" />
-            <h1 className="text-lg font-semibold">EHR Operator</h1>
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:animate-pulse active:scale-95 transition-transform duration-150"
+            onClick={handleLogoClick}
+          >
+            <img
+              src={logo}
+              alt="EHR Operator Logo"
+              className="h-8 filter hover:brightness-125 transition"
+            />
+            <h1 className="text-lg font-semibold text-white hover:text-gray-300 transition duration-150">
+              EHR Operator
+            </h1>
           </div>
         )}
         <button
@@ -46,11 +60,9 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsSidebarOpen }) => {
               isOpen ? "px-4 py-3" : "py-3 justify-center"
             )}
           >
-            {/* Always Centered Icon */}
             <span className="w-6 h-6 flex items-center justify-center">
               {tab.icon}
             </span>
-            {/* Text Disappears When Collapsed */}
             <span
               className={cn(
                 "ml-3 transition-all duration-200",
