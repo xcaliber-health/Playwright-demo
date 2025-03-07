@@ -187,7 +187,7 @@ function WebRecorder({ setActiveTab }) {
               className={`w-full py-2 text-lg font-semibold text-white rounded transition ${
                 isRecording && !isProcessing
                   ? "bg-[#1e3a8a] opacity-50 cursor-not-allowed"
-                  : "bg-[#2563eb] hover:bg-[#1e40af]"
+                  : "bg-[#224acc] hover:bg-[#1b3a99]"
               }`}
             >
               {isRecording ? "Recording..." : "Start"}

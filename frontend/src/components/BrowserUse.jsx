@@ -46,7 +46,7 @@ const BrowserUse = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${backendUrl}/start_session`, {
+      const response = await fetch(`${backendUrl}/start_vnc`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: finalTask }),
