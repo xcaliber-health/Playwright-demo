@@ -6,10 +6,10 @@ import BrowserUse from "./BrowserUse";
 import logo from "../assets/logo.png";
 
 function TabsPage() {
-  const [activeTab, setActiveTab] = useState("Agent");
+  const [activeTab, setActiveTab] = useState("EHR Agent");
 
   return (
-    <div className="w-full bg-[#0c111d] min-h-screen">
+    <div className="w-full h-screen flex flex-col bg-[#0c111d]">
       {/* Navbar */}
       <nav className="flex items-center justify-between px-6 py-4 bg-[#161b26] shadow-md">
         <div className="flex items-center gap-3">
@@ -17,11 +17,11 @@ function TabsPage() {
           <h1 className="text-xl font-semibold text-white">EHR Operator</h1>
         </div>
       </nav>
-      
+
       {/* Tabs */}
-      <div className="p-8 w-full">
-        <div className="flex justify-start border-b bg-[#161b26] w-full rounded-md">
-          {["Agent", "Recorder", "Replays", "BrowserUse"].map((tab) => (
+      <div className="flex flex-col">
+        <div className="flex border-b bg-[#161b26] rounded-md">
+          {["EHR Agent", "Recorder", "Replays"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -36,14 +36,16 @@ function TabsPage() {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Tab Content */}
-        <div className="mt-4 w-full rounded-lg">
-          {activeTab === "Agent" && <EhrOperator />}
-          {activeTab === "Recorder" && <WebRecorder setActiveTab={setActiveTab} />}
-          {activeTab === "Replays" && <RecordingsPage />}
-          {activeTab === "BrowserUse" && <BrowserUse />}
-        </div>
+      {/* Main Content */}
+      <div className="flex-grow flex">
+        {/* {activeTab === "EHR Agent" && <EhrOperator />} */}
+        {activeTab === "Recorder" && (
+          <WebRecorder setActiveTab={setActiveTab} />
+        )}
+        {activeTab === "Replays" && <RecordingsPage />}
+        {activeTab === "EHR Agent" && <BrowserUse />}
       </div>
     </div>
   );
