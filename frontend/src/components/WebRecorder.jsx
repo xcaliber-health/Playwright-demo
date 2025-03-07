@@ -68,7 +68,7 @@ function WebRecorder({ setActiveTab }) {
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-5 bg-[#0c111d] overflow-hidden">
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0c111d] overflow-hidden">
       {/* Sidebar (Fixed width, no collapsing) */}
       <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741]">
         <h2 className="text-xl font-bold mb-4 text-[#e5e7eb]">Web Recorder</h2>

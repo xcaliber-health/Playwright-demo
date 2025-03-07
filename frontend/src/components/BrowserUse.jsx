@@ -40,7 +40,7 @@ const BrowserUse = () => {
       setVncStarted(true);
     } catch (error) {
       console.error("Error starting VNC:", error);
-      toast.error("Enter a task description!", { position: "top-right" });
+      // toast.error("Error starting VNC:", { position: "top-right" });
       setVncStarted(false);
     } finally {
       setLoading(false);

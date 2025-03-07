@@ -66,7 +66,7 @@ const ChatRecordingsPage = () => {
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-5 bg-[#0c111d] overflow-hidden text-white">
+    <div className="w-full flex flex-col lg:flex-row flex-grow gap-5 p-4 bg-[#0c111d] overflow-hidden text-white">
       {/* Left Sidebar (h-fit, equal spacing) */}
       <div className="w-full lg:w-1/4 p-5 rounded-lg shadow-md bg-[#161b26] border border-[#333741] h-fit">
         <div className="mb-4">
