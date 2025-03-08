@@ -4,48 +4,57 @@ import EhrOperator from "./EhrOperator";
 import RecordingsPage from "./RecordingsPage";
 import BrowserUse from "./BrowserUse";
 import logo from "../assets/logo.png";
+import Sidebar from "../components/ui/Sidebar";
+import { Bot, Server } from "lucide-react";
 
 function TabsPage() {
-  const [activeTab, setActiveTab] = useState("EHR Agent");
+  const [activeTab, setActiveTab] = useState("Assistant");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Refresh Page on Click
+  const handleLogoClick = () => {
+    window.location.reload(); // Refresh the page
+  };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[#0c111d]">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-[#161b26] shadow-md">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="EHR Operator Logo" className="h-8" />
-          <h1 className="text-xl font-semibold text-white">EHR Operator</h1>
-        </div>
-      </nav>
-
-      {/* Tabs */}
-      <div className="flex flex-col">
-        <div className="flex border-b bg-[#161b26] rounded-md">
-          {["EHR Agent", "Recorder", "Replays"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`relative px-6 py-2 text-base font-medium transition-all rounded-t-md 
-                ${
-                  activeTab === tab
-                    ? "text-white bg-[#374151] after:absolute after:left-0 after:bottom-[-2px] after:w-full after:h-[2px] after:bg-blue-600"
-                    : "text-white hover:text-gray-400"
-                }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="w-full h-screen flex bg-[#0a0a0a]">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
       {/* Main Content */}
-      <div className="flex-grow flex">
-        {/* {activeTab === "EHR Agent" && <EhrOperator />} */}
-        {activeTab === "Recorder" && (
-          <WebRecorder setActiveTab={setActiveTab} />
-        )}
-        {activeTab === "Replays" && <RecordingsPage />}
-        {activeTab === "EHR Agent" && <BrowserUse />}
+      <div className="flex flex-col flex-1">
+        <nav className="flex items-center px-6 py-4 bg-[#0a0a0a] shadow-md h-[56px]">
+          {!isSidebarOpen && (
+            <div
+              className="flex items-center gap-3 cursor-pointer hover:animate-pulse active:scale-95 transition-transform duration-150"
+              onClick={handleLogoClick}
+            >
+              <img
+                src={logo}
+                alt="EHR Operator Logo"
+                className="h-8 filter hover:brightness-125 transition"
+              />
+              <h1 className="text-lg font-semibold text-white hover:text-gray-300 transition duration-150">
+                EHR Operator
+              </h1>
+            </div>
+          )}
+        </nav>
+
+        {/* Main Tab Content */}
+        <div className="flex-grow flex">
+          {activeTab === "System" && (
+            <WebRecorder setActiveTab={setActiveTab} />
+          )}
+          {/* Commented out the "Replays" tab */}
+          {/* {activeTab === "Replays" && <RecordingsPage />} */}
+          {activeTab === "Assistant" && <BrowserUse />}
+        </div>
       </div>
     </div>
   );
